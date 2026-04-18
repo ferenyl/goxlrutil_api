@@ -18,10 +18,13 @@ from goxlrutil_api.protocol.types import (
     ButtonColourGroups,
     ButtonColourOffStyle,
     ChannelName,
+    EffectBankPresets,
     EncoderColourTargets,
     FaderDisplayStyle,
     FaderName,
     MuteState,
+    SampleBank,
+    SampleButtons,
     SamplerColourTargets,
     SimpleColourTargets,
     WaterfallDirection,
@@ -132,7 +135,98 @@ class GoXLRClient:
         await self.command(serial, GoXLRCommand.set_fader_mute_state(fader, state))
 
     async def set_fx_enabled(self, serial: str, enabled: bool) -> None:
+        """Enable or disable all effects."""
         await self.command(serial, GoXLRCommand.set_fx_enabled(enabled))
+
+    async def toggle_fx(self, serial: str) -> bool:
+        """Toggle FX on/off. Reads fresh state, returns the new enabled state."""
+        status = await self.get_status()
+        mixer = status.mixers.get(serial)
+        current = mixer.effects.is_enabled if mixer and mixer.effects else False
+        new_state = not current
+        await self.set_fx_enabled(serial, new_state)
+        return new_state
+
+    # ------------------------------------------------------------------
+    # Effects – presets
+    # ------------------------------------------------------------------
+
+    async def set_active_effect_preset(
+        self, serial: str, preset: EffectBankPresets
+    ) -> None:
+        """Switch the active effect bank preset (Preset1–Preset6)."""
+        await self.command(serial, GoXLRCommand.set_active_effect_preset(preset))
+
+    # ------------------------------------------------------------------
+    # Effects – individual voices
+    # ------------------------------------------------------------------
+
+    async def set_megaphone_enabled(self, serial: str, enabled: bool) -> None:
+        """Enable or disable the Megaphone voice effect."""
+        await self.command(serial, GoXLRCommand.set_megaphone_enabled(enabled))
+
+    async def toggle_megaphone(self, serial: str) -> bool:
+        """Toggle Megaphone on/off. Reads fresh state, returns the new enabled state."""
+        status = await self.get_status()
+        mixer = status.mixers.get(serial)
+        current = (
+            mixer.effects.current.megaphone.is_enabled
+            if mixer and mixer.effects
+            else False
+        )
+        new_state = not current
+        await self.set_megaphone_enabled(serial, new_state)
+        return new_state
+
+    async def set_robot_enabled(self, serial: str, enabled: bool) -> None:
+        """Enable or disable the Robot voice effect."""
+        await self.command(serial, GoXLRCommand.set_robot_enabled(enabled))
+
+    async def toggle_robot(self, serial: str) -> bool:
+        """Toggle Robot on/off. Reads fresh state, returns the new enabled state."""
+        status = await self.get_status()
+        mixer = status.mixers.get(serial)
+        current = (
+            mixer.effects.current.robot.is_enabled
+            if mixer and mixer.effects
+            else False
+        )
+        new_state = not current
+        await self.set_robot_enabled(serial, new_state)
+        return new_state
+
+    async def set_hard_tune_enabled(self, serial: str, enabled: bool) -> None:
+        """Enable or disable the Hard Tune voice effect."""
+        await self.command(serial, GoXLRCommand.set_hard_tune_enabled(enabled))
+
+    async def toggle_hard_tune(self, serial: str) -> bool:
+        """Toggle Hard Tune on/off. Reads fresh state, returns the new enabled state."""
+        status = await self.get_status()
+        mixer = status.mixers.get(serial)
+        current = (
+            mixer.effects.current.hard_tune.is_enabled
+            if mixer and mixer.effects
+            else False
+        )
+        new_state = not current
+        await self.set_hard_tune_enabled(serial, new_state)
+        return new_state
+
+    # ------------------------------------------------------------------
+    # Sampler
+    # ------------------------------------------------------------------
+
+    async def play_sample(
+        self, serial: str, bank: SampleBank, button: SampleButtons
+    ) -> None:
+        """Trigger playback of the sample assigned to a bank+button slot."""
+        await self.command(serial, GoXLRCommand.play_next_sample(bank, button))
+
+    async def stop_sample(
+        self, serial: str, bank: SampleBank, button: SampleButtons
+    ) -> None:
+        """Stop playback for the given bank+button slot."""
+        await self.command(serial, GoXLRCommand.stop_sample_playback(bank, button))
 
     # ------------------------------------------------------------------
     # Lighting / colour helpers

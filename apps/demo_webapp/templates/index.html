@@ -63,17 +63,39 @@
 
       <!-- FX -->
       {% if mixer.effects %}
-      <h3>FX</h3>
-      <div class="fx-row">
-        <span>Effects enabled: <strong>{{ mixer.effects.is_enabled }}</strong></span>
-        <button hx-post="/api/fx/{{ serial }}/true"
-                hx-target="#flash" hx-swap="innerHTML"
-                class="btn-green">Enable FX</button>
-        <button hx-post="/api/fx/{{ serial }}/false"
-                hx-target="#flash" hx-swap="innerHTML"
-                class="btn-red">Disable FX</button>
+      <h3>Effects</h3>
+      <div class="effects-section"
+           id="effects-{{ serial }}"
+           hx-get="/partial/effects/{{ serial }}"
+           hx-trigger="every 2s"
+           hx-swap="innerHTML">
+        {% include "_effects_block.html" %}
       </div>
       {% endif %}
+
+      <!-- Sampler -->
+      <h3>Sampler</h3>
+      <div class="sampler-section">
+        {% for bank in sample_banks %}
+        <div class="sampler-grid">
+          <span class="effect-label">Bank {{ bank }}</span>
+          {% for btn in sample_buttons %}
+          <div class="sampler-btn-cell">
+            <button class="btn-play"
+                    hx-post="/api/sampler/play/{{ serial }}/{{ bank }}/{{ btn }}"
+                    hx-target="#flash" hx-swap="innerHTML">
+              ▶ {{ btn }}
+            </button>
+            <button class="btn-stop"
+                    hx-post="/api/sampler/stop/{{ serial }}/{{ bank }}/{{ btn }}"
+                    hx-target="#flash" hx-swap="innerHTML">
+              ■
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
 
       <!-- Button Events -->
       <h3>Button Events</h3>

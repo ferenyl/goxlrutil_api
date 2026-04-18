@@ -1,0 +1,49 @@
+{% if mixer and mixer.effects %}
+<div class="effects-row">
+  <span class="effect-label">FX</span>
+  <button class="btn-toggle {{ 'btn-on' if mixer.effects.is_enabled else 'btn-off' }}"
+          hx-post="/api/fx/{{ serial }}/toggle"
+          hx-target="#effects-{{ serial }}"
+          hx-swap="innerHTML">
+    {{ "ON" if mixer.effects.is_enabled else "OFF" }}
+  </button>
+</div>
+<div class="effects-row">
+  <span class="effect-label">Megaphone</span>
+  <button class="btn-toggle {{ 'btn-on' if mixer.effects.current.megaphone.is_enabled else 'btn-off' }}"
+          hx-post="/api/effect/megaphone/{{ serial }}/toggle"
+          hx-target="#effects-{{ serial }}"
+          hx-swap="innerHTML">
+    {{ "ON" if mixer.effects.current.megaphone.is_enabled else "OFF" }}
+  </button>
+</div>
+<div class="effects-row">
+  <span class="effect-label">Robot</span>
+  <button class="btn-toggle {{ 'btn-on' if mixer.effects.current.robot.is_enabled else 'btn-off' }}"
+          hx-post="/api/effect/robot/{{ serial }}/toggle"
+          hx-target="#effects-{{ serial }}"
+          hx-swap="innerHTML">
+    {{ "ON" if mixer.effects.current.robot.is_enabled else "OFF" }}
+  </button>
+</div>
+<div class="effects-row">
+  <span class="effect-label">Hard Tune</span>
+  <button class="btn-toggle {{ 'btn-on' if mixer.effects.current.hard_tune.is_enabled else 'btn-off' }}"
+          hx-post="/api/effect/hardtune/{{ serial }}/toggle"
+          hx-target="#effects-{{ serial }}"
+          hx-swap="innerHTML">
+    {{ "ON" if mixer.effects.current.hard_tune.is_enabled else "OFF" }}
+  </button>
+</div>
+<div class="effects-presets">
+  <span class="effect-label">Preset</span>
+  {% for preset in effect_presets %}
+  <button class="btn-preset {{ 'btn-preset-active' if mixer.effects.active_preset.value == preset else '' }}"
+          hx-post="/api/effect/preset/{{ serial }}/{{ preset }}"
+          hx-target="#effects-{{ serial }}"
+          hx-swap="innerHTML">
+    {{ preset }}
+  </button>
+  {% endfor %}
+</div>
+{% endif %}

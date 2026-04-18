@@ -15,10 +15,12 @@ A comprehensive reference for humans and AI agents integrating with the library.
 7. [Reading State](#reading-state)
 8. [Live Updates via Patches](#live-updates-via-patches)
 9. [Button Events](#button-events)
-10. [Error Handling](#error-handling)
-11. [Synchronous Wrapper](#synchronous-wrapper)
-12. [Full Integration Example](#full-integration-example)
-13. [Protocol Notes](#protocol-notes)
+10. [Lighting & Colours](#lighting--colours)
+11. [Effects & Sampler](#effects--sampler)
+12. [Error Handling](#error-handling)
+13. [Synchronous Wrapper](#synchronous-wrapper)
+14. [Full Integration Example](#full-integration-example)
+15. [Protocol Notes](#protocol-notes)
 
 ---
 
@@ -168,8 +170,62 @@ await client.set_fader_mute_state(serial, FaderName.A, MuteState.Unmuted)
 ### Effects (FX)
 
 ```python
-await client.set_fx_enabled(serial, True)   # enable effects
-await client.set_fx_enabled(serial, False)  # disable effects
+from goxlrutil_api.protocol.types import EffectBankPresets
+
+# Global FX on/off
+await client.set_fx_enabled(serial, True)
+await client.set_fx_enabled(serial, False)
+
+# Toggle (reads current state from cache, returns new bool)
+is_on = await client.toggle_fx(serial)
+
+# Switch active effect preset (Preset1 – Preset6)
+await client.set_active_effect_preset(serial, EffectBankPresets.Preset1)
+
+# Megaphone
+await client.set_megaphone_enabled(serial, True)
+enabled = await client.toggle_megaphone(serial)   # returns new bool
+
+# Robot voice
+await client.set_robot_enabled(serial, True)
+enabled = await client.toggle_robot(serial)
+
+# Hard Tune
+await client.set_hard_tune_enabled(serial, True)
+enabled = await client.toggle_hard_tune(serial)
+```
+
+`EffectBankPresets` values: `Preset1`, `Preset2`, `Preset3`, `Preset4`, `Preset5`, `Preset6`
+
+> **Note:** Toggle methods read from the in-memory state cache.
+> Call `await client.get_status()` at least once (or connect via WebSocket) before using them.
+
+### Sampler
+
+```python
+from goxlrutil_api.protocol.types import SampleBank, SampleButtons
+
+# Trigger playback of a sample in a specific bank + button slot
+await client.play_sample(serial, SampleBank.A, SampleButtons.TopLeft)
+
+# Stop playback for a slot
+await client.stop_sample(serial, SampleBank.A, SampleButtons.TopLeft)
+```
+
+`SampleBank` values: `A`, `B`, `C`
+
+`SampleButtons` values: `TopLeft`, `TopRight`, `BottomLeft`, `BottomRight`
+
+Example — play all four slots in bank B then stop them:
+
+```python
+for button in SampleButtons:
+    await client.play_sample(serial, SampleBank.B, button)
+
+# … later …
+
+for button in SampleButtons:
+    await client.stop_sample(serial, SampleBank.B, button)
 ```
 
 ### Raw Commands
@@ -352,6 +408,241 @@ async def on_button(event: ButtonEvent) -> None:
             print("Bleep button pressed – activating sound effect")
         elif event.event_type == ButtonEventType.long_pressed:
             print("Bleep held – activating extended effect")
+```
+
+---
+
+## Lighting & Colours
+
+The library exposes the full GoXLR LED control API.  Colours are passed as
+either a `Colour` instance or a plain 6-character hex string (`RRGGBB` without
+`#`).
+
+### The `Colour` helper
+
+```python
+from goxlrutil_api import Colour
+
+# From RGB components
+red   = Colour(255, 0, 0)
+teal  = Colour(0, 200, 180)
+
+# From hex strings (# is optional)
+orange = Colour.from_hex("#FF8800")
+white  = Colour.from_hex("FFFFFF")
+
+# From a packed 24-bit integer
+blue = Colour.from_int(0x0000FF)
+
+# Named constants
+Colour.BLACK    # (0, 0, 0)
+Colour.WHITE    # (255, 255, 255)
+Colour.RED      # (255, 0, 0)
+Colour.GREEN    # (0, 255, 0)
+Colour.BLUE     # (0, 0, 255)
+Colour.YELLOW   # (255, 255, 0)
+Colour.CYAN     # (0, 255, 255)
+Colour.MAGENTA  # (255, 0, 255)
+Colour.ORANGE   # (255, 128, 0)
+Colour.PURPLE   # (128, 0, 255)
+Colour.PINK     # (255, 105, 180)
+
+# Dim a colour to e.g. 30 % brightness (default factor)
+dimmed_red = Colour.RED.dimmed()          # Colour(76, 0, 0)
+dimmed_red = Colour.RED.dimmed(0.1)       # Colour(25, 0, 0)
+
+# str(colour) → "FF0000" — the daemon wire format
+print(str(Colour.RED))   # → "FF0000"
+```
+
+Plain hex strings are accepted wherever a `Colour` is expected:
+
+```python
+await client.set_global_colour(serial, "FF8800")  # orange, no Colour object needed
+```
+
+### Global & simple colour targets
+
+```python
+from goxlrutil_api.protocol.types import SimpleColourTargets
+
+# Global accent colour (affects animations and unassigned LEDs)
+await client.set_global_colour(serial, Colour.PURPLE)
+
+# Named single-colour targets: Global, Accent, ScribbleBack
+await client.set_simple_colour(serial, SimpleColourTargets.Accent, Colour.CYAN)
+await client.set_simple_colour(serial, SimpleColourTargets.ScribbleBack, "#1A1A2E")
+```
+
+### Button colours
+
+Each button has an *on* (active) colour and an *off* (inactive) colour.
+
+```python
+from goxlrutil_api.protocol.types import Button
+
+# Set active colour; off colour defaults to a 30 % dimmed version of on colour
+await client.set_button_colour(serial, Button.Bleep, Colour.RED)
+
+# Set both explicitly
+await client.set_button_colour(serial, Button.Cough, Colour.ORANGE, Colour.from_hex("331100"))
+
+# All Button values:
+# Fader1Mute, Fader2Mute, Fader3Mute, Fader4Mute
+# Bleep, Cough
+# EffectSelect1 … EffectSelect6
+# EffectFx, EffectMegaphone, EffectRobot, EffectHardTune
+# SamplerSelectA, SamplerSelectB, SamplerSelectC
+# SamplerTopLeft, SamplerTopRight, SamplerBottomLeft, SamplerBottomRight, SamplerClear
+```
+
+#### Button off-state style
+
+Control how a button looks when it is inactive:
+
+```python
+from goxlrutil_api.protocol.types import Button, ButtonColourOffStyle
+
+# ButtonColourOffStyle values: Dimmed, Colour2, Dimmed2
+await client.set_button_off_style(serial, Button.Bleep, ButtonColourOffStyle.Dimmed)
+await client.set_button_off_style(serial, Button.Cough, ButtonColourOffStyle.Colour2, Colour.BLUE)
+```
+
+#### Button group colours
+
+Set colours for all buttons in a logical group at once:
+
+```python
+from goxlrutil_api.protocol.types import ButtonColourGroups
+
+# ButtonColourGroups values: FaderMute, EffectSelector, EffectTypes
+await client.set_button_group_colour(serial, ButtonColourGroups.FaderMute, Colour.BLUE, Colour.from_hex("001040"))
+await client.set_button_group_colour(serial, ButtonColourGroups.EffectTypes, Colour.GREEN, Colour.from_hex("003300"))
+```
+
+### Fader colours
+
+Each fader strip has a top and a bottom colour (the gradient between them is
+controlled by the *display style*):
+
+```python
+from goxlrutil_api.protocol.types import FaderName, FaderDisplayStyle
+
+# Set top and bottom colours for fader A
+await client.set_fader_colour(serial, FaderName.A, Colour.CYAN, Colour.BLUE)
+await client.set_fader_colour(serial, FaderName.B, "#00FF88", "#0044FF")
+
+# Set display style for a single fader
+# FaderDisplayStyle values: TwoColour, Gradient, Meter, GradientMeter
+await client.set_fader_display_style(serial, FaderName.A, FaderDisplayStyle.Gradient)
+
+# Apply one style to all four faders simultaneously
+await client.set_all_fader_display_style(serial, FaderDisplayStyle.GradientMeter)
+```
+
+### Encoder colours
+
+Each effect encoder (Reverb, Pitch, Echo, Gender) has three LED zones:
+
+```python
+from goxlrutil_api.protocol.types import EncoderColourTargets
+
+# EncoderColourTargets values: Reverb, Pitch, Echo, Gender
+await client.set_encoder_colour(
+    serial,
+    EncoderColourTargets.Reverb,
+    colour_left=Colour.BLUE,    # left arc
+    colour_right=Colour.CYAN,   # right arc
+    colour_knob=Colour.WHITE,   # knob LED
+)
+```
+
+### Sampler colours
+
+Each sampler bank-select button (A, B, C) has three LED states:
+
+```python
+from goxlrutil_api.protocol.types import SamplerColourTargets, ButtonColourOffStyle
+
+# SamplerColourTargets values: SamplerSelectA, SamplerSelectB, SamplerSelectC
+await client.set_sampler_colour(
+    serial,
+    SamplerColourTargets.SamplerSelectA,
+    colour_one=Colour.GREEN,
+    colour_two=Colour.from_hex("003300"),
+    colour_three=Colour.YELLOW,
+)
+
+# Off-state style for a sampler selector button
+await client.set_sampler_off_style(
+    serial,
+    SamplerColourTargets.SamplerSelectA,
+    ButtonColourOffStyle.Dimmed,
+)
+```
+
+### Animation mode
+
+```python
+from goxlrutil_api.protocol.types import AnimationMode, WaterfallDirection
+
+# AnimationMode values:
+#   RetroRainbow, RainbowDark, RainbowBright, Simple, Ripple, None_
+
+# Animated rainbow across all LEDs
+await client.set_animation_mode(serial, AnimationMode.RainbowBright)
+
+# Simple static animation with custom colours and waterfall direction
+# WaterfallDirection values: Down, Up, Off
+await client.set_animation_mode(
+    serial,
+    AnimationMode.Simple,
+    colour_one=Colour.BLUE,
+    colour_two=Colour.CYAN,
+    waterfall=WaterfallDirection.Down,
+)
+
+# Disable animation
+await client.set_animation_mode(serial, AnimationMode.None_)
+```
+
+### Raw lighting commands
+
+All lighting methods map to `GoXLRCommand` factory methods for use with `client.command()`:
+
+```python
+from goxlrutil_api.protocol.commands import GoXLRCommand
+from goxlrutil_api.protocol.types import Button, FaderName, SimpleColourTargets
+
+# Equivalent raw calls (colours as RRGGBB hex strings):
+await client.command(serial, GoXLRCommand.set_button_colours(Button.Bleep, "FF0000", "330000"))
+await client.command(serial, GoXLRCommand.set_fader_colours(FaderName.A, "00FF88", "0044FF"))
+await client.command(serial, GoXLRCommand.set_global_colour("FF8800"))
+await client.command(serial, GoXLRCommand.set_simple_colour(SimpleColourTargets.Accent, "AA00FF"))
+```
+
+---
+
+## Effects & Sampler
+
+See [Sending Commands → Effects (FX)](#effects-fx) and [Sending Commands → Sampler](#sampler) for the full reference.
+
+Quick summary:
+
+```python
+from goxlrutil_api.protocol.types import EffectBankPresets, SampleBank, SampleButtons
+
+# --- Effects ---
+await client.set_fx_enabled(serial, True)
+await client.toggle_fx(serial)                                         # → bool
+await client.set_active_effect_preset(serial, EffectBankPresets.Preset3)
+await client.toggle_megaphone(serial)                                  # → bool
+await client.toggle_robot(serial)                                      # → bool
+await client.toggle_hard_tune(serial)                                  # → bool
+
+# --- Sampler ---
+await client.play_sample(serial, SampleBank.A, SampleButtons.TopLeft)
+await client.stop_sample(serial, SampleBank.A, SampleButtons.TopLeft)
 ```
 
 ---

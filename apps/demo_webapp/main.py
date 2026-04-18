@@ -33,8 +33,11 @@ from goxlrutil_api.protocol.responses import DaemonStatus
 from goxlrutil_api.protocol.types import (
     Button,
     ChannelName,
+    EffectBankPresets,
     FaderName,
     MuteState,
+    SampleBank,
+    SampleButtons,
 )
 
 _log = logging.getLogger(__name__)
@@ -102,6 +105,10 @@ async def index(request: Request) -> HTMLResponse:
             "status": _status,
             "channel_names": [c.value for c in ChannelName],
             "fader_names": [f.value for f in FaderName],
+            "effect_presets": [p.value for p in EffectBankPresets],
+            "sample_banks": [b.value for b in SampleBank],
+            "sample_buttons": [b.value for b in SampleButtons],
+
         },
     )
 
@@ -140,12 +147,90 @@ async def set_mute(request: Request, serial: str, fader: str, state: str) -> HTM
     )
 
 
-@app.post("/api/fx/{serial}/{enabled}")
-async def set_fx(serial: str, enabled: str) -> dict[str, Any]:
+async def _render_effects(request: Request, serial: str) -> HTMLResponse:
+    """Re-fetch state and render the effects partial block."""
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    return templates.TemplateResponse(
+        request,
+        "_effects_block.html",
+        {
+            "serial": serial,
+            "mixer": mixer,
+            "effect_presets": [p.value for p in EffectBankPresets],
+        },
+    )
+
+
+@app.post("/api/fx/{serial}/toggle", response_class=HTMLResponse)
+async def toggle_fx(request: Request, serial: str) -> HTMLResponse:
     _require_connected()
     assert _client is not None
-    await _client.command(serial, GoXLRCommand.set_fx_enabled(enabled.lower() == "true"))
-    return {"ok": True, "fx_enabled": enabled}
+    await _client.toggle_fx(serial)
+    return await _render_effects(request, serial)
+
+
+@app.post("/api/effect/preset/{serial}/{preset}", response_class=HTMLResponse)
+async def set_effect_preset(request: Request, serial: str, preset: str) -> HTMLResponse:
+    _require_connected()
+    assert _client is not None
+    try:
+        p = EffectBankPresets(preset)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_active_effect_preset(serial, p)
+    return await _render_effects(request, serial)
+
+
+@app.post("/api/effect/megaphone/{serial}/toggle", response_class=HTMLResponse)
+async def toggle_megaphone(request: Request, serial: str) -> HTMLResponse:
+    _require_connected()
+    assert _client is not None
+    await _client.toggle_megaphone(serial)
+    return await _render_effects(request, serial)
+
+
+@app.post("/api/effect/robot/{serial}/toggle", response_class=HTMLResponse)
+async def toggle_robot(request: Request, serial: str) -> HTMLResponse:
+    _require_connected()
+    assert _client is not None
+    await _client.toggle_robot(serial)
+    return await _render_effects(request, serial)
+
+
+@app.post("/api/effect/hardtune/{serial}/toggle", response_class=HTMLResponse)
+async def toggle_hard_tune(request: Request, serial: str) -> HTMLResponse:
+    _require_connected()
+    assert _client is not None
+    await _client.toggle_hard_tune(serial)
+    return await _render_effects(request, serial)
+
+
+@app.post("/api/sampler/play/{serial}/{bank}/{button}")
+async def play_sample(serial: str, bank: str, button: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        b = SampleBank(bank)
+        btn = SampleButtons(button)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.play_sample(serial, b, btn)
+    return {"ok": True, "bank": bank, "button": button}
+
+
+@app.post("/api/sampler/stop/{serial}/{bank}/{button}")
+async def stop_sample(serial: str, bank: str, button: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        b = SampleBank(bank)
+        btn = SampleButtons(button)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.stop_sample(serial, b, btn)
+    return {"ok": True, "bank": bank, "button": button}
 
 
 @app.get("/api/status")
@@ -207,6 +292,24 @@ async def partial_button_log(request: Request, serial: str) -> HTMLResponse:
         request,
         "_button_log.html",
         {"serial": serial, "events": events},
+    )
+
+
+@app.get("/partial/effects/{serial}", response_class=HTMLResponse)
+async def partial_effects(request: Request, serial: str) -> HTMLResponse:
+    """Return the effects section for one mixer – used for HTMX polling."""
+    _require_connected()
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    return templates.TemplateResponse(
+        request,
+        "_effects_block.html",
+        {
+            "serial": serial,
+            "mixer": mixer,
+            "effect_presets": [p.value for p in EffectBankPresets],
+        },
     )
 
 

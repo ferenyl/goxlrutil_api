@@ -605,4 +605,51 @@ def _parse_mixer(raw: dict[str, Any]) -> MixerStatus:
     mixer.button_down = raw.get("button_down", {})
     mixer.router = raw.get("router", {})
 
+    eraw = raw.get("effects")
+    if eraw is not None:
+        cur = eraw.get("current", {})
+        mega = cur.get("megaphone", {})
+        robot = cur.get("robot", {})
+        ht = cur.get("hard_tune", {})
+        mixer.effects = Effects(
+            is_enabled=eraw.get("is_enabled", False),
+            active_preset=EffectBankPresets(
+                eraw.get("active_preset", "Preset1")
+            ),
+            preset_names=eraw.get("preset_names", {}),
+            current=ActiveEffects(
+                megaphone=Megaphone(
+                    is_enabled=mega.get("is_enabled", False),
+                    style=MegaphoneStyle(mega.get("style", "Megaphone")),
+                    amount=mega.get("amount", 0),
+                    post_gain=mega.get("post_gain", 0),
+                ),
+                robot=Robot(
+                    is_enabled=robot.get("is_enabled", False),
+                    style=RobotStyle(robot.get("style", "Robot1")),
+                    low_gain=robot.get("low_gain", 0),
+                    low_freq=robot.get("low_freq", 0),
+                    low_width=robot.get("low_width", 0),
+                    mid_gain=robot.get("mid_gain", 0),
+                    mid_freq=robot.get("mid_freq", 0),
+                    mid_width=robot.get("mid_width", 0),
+                    high_gain=robot.get("high_gain", 0),
+                    high_freq=robot.get("high_freq", 0),
+                    high_width=robot.get("high_width", 0),
+                    waveform=robot.get("waveform", 0),
+                    pulse_width=robot.get("pulse_width", 0),
+                    threshold=robot.get("threshold", 0),
+                    dry_mix=robot.get("dry_mix", 0),
+                ),
+                hard_tune=HardTune(
+                    is_enabled=ht.get("is_enabled", False),
+                    style=HardTuneStyle(ht.get("style", "Natural")),
+                    amount=ht.get("amount", 0),
+                    rate=ht.get("rate", 0),
+                    window=ht.get("window", 0),
+                    source=HardTuneSource(ht.get("source", "All")),
+                ),
+            ),
+        )
+
     return mixer
