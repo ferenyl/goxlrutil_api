@@ -66,9 +66,14 @@ def _minimal_status() -> dict[str, Any]:
 def _last_goxlr_cmd(transport: RecordingTransport) -> dict[str, Any]:
     """Return the inner GoXLR command payload from the most recent send."""
     req = transport.sent[-1]
-    data = req.to_dict()
-    assert "Command" in data, f"Expected Command, got: {data}"
-    return data["Command"][1]
+    raw = req.to_dict()
+    assert isinstance(raw, dict), f"Expected dict payload, got: {raw}"
+    assert "Command" in raw, f"Expected Command key, got: {raw}"
+    args = raw["Command"]
+    assert isinstance(args, list) and len(args) >= 2, f"Unexpected Command value: {args}"
+    result = args[1]
+    assert isinstance(result, dict), f"Expected dict command, got: {result}"
+    return result  # type: ignore[return-value]
 
 
 # ---------------------------------------------------------------------------
