@@ -1,0 +1,73 @@
+name: Feature Request
+description: Suggest an improvement or new capability
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement!
+        Please describe your use case so we can understand the need.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: What are you trying to do that the library doesn't currently support?
+      placeholder: |
+        I'm building a Home Assistant integration and I need to …
+        Currently there's no way to …
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe what you'd like to see added or changed. Include example API if you have one.
+      placeholder: |
+        A new method `client.something(...)` that …
+
+        ```python
+        await client.example(serial, value)
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any workarounds you've tried, or alternative approaches.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the library does this relate to?
+      multiple: true
+      options:
+        - Client API / convenience methods
+        - Transports (WebSocket / Unix / HTTP)
+        - Live updates / patch events
+        - Button events
+        - Lighting & colours
+        - Effects & sampler
+        - Routing & fader assignment
+        - Mic / EQ / audio
+        - Profiles
+        - Sync wrapper
+        - Demo webapp
+        - Documentation
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other information, links, or context.
+    validations:
+      required: false

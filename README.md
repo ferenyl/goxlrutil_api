@@ -68,6 +68,11 @@ GOXLR_USE_WS=0 poetry run uvicorn apps.demo_webapp.main:app --reload
 
 The app starts even if the GoXLR daemon is not running – it will show a "not connected" status.
 
+## Documentation
+
+- **[Wiki](https://github.com/GoXLR-on-Linux/goxlrutil_api/wiki)** — full API reference, examples, and integration guide
+- **[USAGE.md](USAGE.md)** — single-file version of the same documentation
+
 ## Development
 
 ```bash

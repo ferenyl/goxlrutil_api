@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation / Wiki
+    url: https://github.com/GoXLR-on-Linux/goxlrutil_api/wiki
+    about: Check the wiki before opening an issue.
+  - name: GoXLR Utility Daemon
+    url: https://github.com/GoXLR-on-Linux/goxlr-utility
+    about: Issues with the daemon itself belong here.
