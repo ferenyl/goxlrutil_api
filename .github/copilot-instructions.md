@@ -13,6 +13,17 @@
   - transports
   - state cache / patch handling
   - demo webapp
+
+## Library-first principle
+
+- **Fix bugs in the library (`src/goxlrutil_api`), not in the webapp.**
+  - If something doesn't work in the demo webapp, the root cause is almost always a missing or incorrect library feature.
+  - The webapp (`apps/demo_webapp`) is purely a thin consumer of the library — it should never compensate for library limitations with workarounds.
+  - Correct fix order: library → tests → webapp reflects the fix.
+- The demo webapp exists to show how the library is used. Its code should read like example usage, not like a place where real logic lives.
+
+## General guidelines
+
 - Prefer **small typed helpers** over broad untyped dictionaries in the public API.
 - Do not hardcode device serial numbers outside of fixtures or local experiments.
 - Keep the demo webapp safe by default: connection status, read-only inspection, and a limited set of reversible write actions first.

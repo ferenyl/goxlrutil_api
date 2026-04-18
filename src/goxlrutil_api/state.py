@@ -30,11 +30,9 @@ class DaemonState:
     def status(self) -> DaemonStatus:
         return self._status
 
-    def update(self, status: DaemonStatus, raw: dict[str, Any] | None = None) -> None:
-        """Replace state with a freshly received DaemonStatus."""
+    def update(self, status: DaemonStatus) -> None:
+        """Replace the typed status view (does not update the raw patch dict)."""
         self._status = status
-        if raw is not None:
-            self._raw = raw
 
     def apply_patch(self, ops: list[Any]) -> None:
         """Apply a list of RFC 6902 JSON Patch operations to the cached state."""

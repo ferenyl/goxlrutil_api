@@ -13,6 +13,7 @@ import asyncio
 import contextlib
 import json
 import logging
+from typing import Any
 
 import httpx
 from httpx_ws import AsyncWebSocketSession, aconnect_ws
@@ -38,6 +39,7 @@ class WebSocketTransport(Transport):
         self._url = url
         self._timeout = timeout
         self._ws: AsyncWebSocketSession | None = None
+        self._ws_cm: Any | None = None  # context manager kept for proper cleanup
         self._http_client: httpx.AsyncClient | None = None
         self._next_id: int = 1
         self._pending: dict[int, asyncio.Future[DaemonResponse]] = {}
@@ -51,7 +53,8 @@ class WebSocketTransport(Transport):
     async def connect(self) -> None:
         self._http_client = httpx.AsyncClient(timeout=self._timeout)
         try:
-            self._ws = await aconnect_ws(self._url, self._http_client).__aenter__()
+            self._ws_cm = aconnect_ws(self._url, self._http_client)
+            self._ws = await self._ws_cm.__aenter__()
         except Exception as exc:
             raise ConnectionError(f"WebSocket connection failed to {self._url}: {exc}") from exc
         self._listener_task = asyncio.create_task(self._listen(), name="goxlr-ws-listener")
@@ -62,10 +65,11 @@ class WebSocketTransport(Transport):
             with contextlib.suppress(asyncio.CancelledError):
                 await self._listener_task
             self._listener_task = None
-        if self._ws is not None:
+        if self._ws_cm is not None:
             with contextlib.suppress(Exception):
-                await self._ws.close()
+                await self._ws_cm.__aexit__(None, None, None)
             self._ws = None
+            self._ws_cm = None
         if self._http_client is not None:
             await self._http_client.aclose()
             self._http_client = None
@@ -75,8 +79,7 @@ class WebSocketTransport(Transport):
             raise ConnectionError("WebSocketTransport not connected")
         msg_id = self._next_id
         self._next_id += 1
-        loop = asyncio.get_event_loop()
-        future: asyncio.Future[DaemonResponse] = loop.create_future()
+        future: asyncio.Future[DaemonResponse] = asyncio.get_running_loop().create_future()
         self._pending[msg_id] = future
         envelope = {"id": msg_id, "data": request.to_dict()}
         await self._ws.send_text(json.dumps(envelope))

@@ -29,41 +29,33 @@
 
       <!-- Faders -->
       <h3>Faders</h3>
-      <div class="faders">
+      <div class="faders"
+           id="faders-{{ serial }}"
+           hx-get="/partial/faders/{{ serial }}"
+           hx-trigger="every 2s"
+           hx-swap="innerHTML">
         {% for fname in fader_names %}
         {% set fs = mixer.fader_status.get(fname) %}
         {% if fs %}
-        <div class="fader-block">
-          <label>{{ fname }}: <em>{{ fs.channel.value }}</em></label>
-          <div class="mute-indicator {{ 'muted' if fs.mute_state.value != 'Unmuted' else '' }}">
-            {{ fs.mute_state.value }}
-          </div>
-          <div class="mute-buttons">
-            <button hx-post="/api/mute/{{ serial }}/{{ fname }}/Unmuted"
-                    hx-target="#flash" hx-swap="innerHTML"
-                    class="btn-green">Unmute</button>
-            <button hx-post="/api/mute/{{ serial }}/{{ fname }}/MutedToAll"
-                    hx-target="#flash" hx-swap="innerHTML"
-                    class="btn-red">Mute All</button>
-          </div>
-        </div>
+        {% include "_fader_block.html" %}
         {% endif %}
         {% endfor %}
       </div>
 
       <!-- Volumes -->
       <h3>Volumes</h3>
-      <div class="volumes">
+      <div class="volumes"
+           id="volumes-{{ serial }}"
+           hx-get="/partial/volumes/{{ serial }}"
+           hx-trigger="every 2s"
+           hx-swap="innerHTML">
         {% for ch, vol in mixer.levels.volumes.items() %}
         <div class="vol-row">
           <label>{{ ch }}</label>
           <input type="range" min="0" max="255" value="{{ vol }}"
-                 hx-post="/api/volume/{{ serial }}/{{ ch }}/{{ '${this.value}' }}"
-                 hx-trigger="change"
-                 hx-target="#flash" hx-swap="innerHTML"
-                 oninput="this.nextElementSibling.textContent=this.value"
-                 hx-vals="js:{}"
-                 _="on change set my @hx-post to '/api/volume/{{ serial }}/{{ ch }}/' + my.value"/>
+                 data-serial="{{ serial }}" data-channel="{{ ch }}"
+                 class="vol-slider"
+                 oninput="this.nextElementSibling.textContent=this.value"/>
           <span>{{ vol }}</span>
         </div>
         {% endfor %}
@@ -90,22 +82,36 @@
   <div id="flash" class="flash"></div>
 
   <script>
-    // Auto-refresh status every 5 seconds
-    setInterval(() => {
-      fetch('/api/status').then(r => r.json()).then(data => {
-        document.querySelector('.status-badge').textContent =
-          data.connected ? '● Connected' : '○ Disconnected';
-      });
-    }, 5000);
+    // Volume sliders: debounced fetch on change
+    let _sliderTimers = {};
+    let _activeSliders = new Set();
 
-    // Volume sliders: update hx-post on input change
-    document.querySelectorAll('input[type=range]').forEach(slider => {
-      slider.addEventListener('input', function() {
-        const parts = this.getAttribute('hx-post').split('/');
-        parts[parts.length - 1] = this.value;
-        this.setAttribute('hx-post', parts.join('/'));
-        this.nextElementSibling.textContent = this.value;
-      });
+    document.addEventListener('input', function(e) {
+      if (!e.target.classList.contains('vol-slider')) return;
+      const slider = e.target;
+      const serial = slider.dataset.serial;
+      const channel = slider.dataset.channel;
+      const value = slider.value;
+      slider.nextElementSibling.textContent = value;
+      _activeSliders.add(serial + channel);
+      clearTimeout(_sliderTimers[serial + channel]);
+      _sliderTimers[serial + channel] = setTimeout(() => {
+        fetch(`/api/volume/${serial}/${channel}/${value}`, {method: 'POST'})
+          .catch(err => console.error('Volume update failed:', err))
+          .finally(() => _activeSliders.delete(serial + channel));
+      }, 150);
+    });
+
+    // Don't let HTMX overwrite a slider the user is currently dragging
+    document.addEventListener('htmx:beforeSwap', function(e) {
+      if (!e.detail.target) return;
+      const volumesDiv = e.detail.target.closest?.('[id^="volumes-"]') || e.detail.target;
+      if (!volumesDiv.id?.startsWith('volumes-')) return;
+      const serial = volumesDiv.id.replace('volumes-', '');
+      // If any slider for this serial is active, skip the swap
+      for (const key of _activeSliders) {
+        if (key.startsWith(serial)) { e.detail.shouldSwap = false; return; }
+      }
     });
   </script>
 </body>

@@ -1,0 +1,12 @@
+{% if mixer %}
+{% for ch, vol in mixer.levels.volumes.items() %}
+<div class="vol-row">
+  <label>{{ ch }}</label>
+  <input type="range" min="0" max="255" value="{{ vol }}"
+         data-serial="{{ serial }}" data-channel="{{ ch }}"
+         class="vol-slider"
+         oninput="this.nextElementSibling.textContent=this.value"/>
+  <span>{{ vol }}</span>
+</div>
+{% endfor %}
+{% endif %}

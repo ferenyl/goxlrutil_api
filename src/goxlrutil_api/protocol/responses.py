@@ -492,6 +492,7 @@ class DaemonResponse:
     ok: bool = False
     error: str | None = None
     status: DaemonStatus | None = None
+    raw_status: dict[str, Any] | None = None
     patch: list[Any] | None = None
     mic_level: float | None = None
 
@@ -503,7 +504,8 @@ class DaemonResponse:
             if "Error" in data:
                 return DaemonResponse(error=data["Error"])
             if "Status" in data:
-                return DaemonResponse(status=_parse_status(data["Status"]))
+                raw = data["Status"]
+                return DaemonResponse(status=_parse_status(raw), raw_status=raw)
             if "Patch" in data:
                 return DaemonResponse(patch=data["Patch"])
             if "MicLevel" in data:

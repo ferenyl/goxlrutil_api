@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from goxlrutil_api.exceptions import CommandError
@@ -13,6 +14,8 @@ from goxlrutil_api.state import DaemonState
 from goxlrutil_api.transport.base import Transport
 
 _log = logging.getLogger(__name__)
+
+PatchListener = Callable[[DaemonStatus], Awaitable[None]]
 
 
 class GoXLRClient:
@@ -25,11 +28,24 @@ class GoXLRClient:
             status = await client.get_status()
             serial = next(iter(status.mixers))
             await client.set_volume(serial, ChannelName.Mic, 200)
+
+    To receive live state updates (requires WebSocketTransport)::
+
+        async def on_update(status: DaemonStatus) -> None:
+            print(status.mixers)
+
+        async with GoXLRClient(transport, on_state_update=on_update) as client:
+            ...
     """
 
-    def __init__(self, transport: Transport) -> None:
+    def __init__(
+        self,
+        transport: Transport,
+        on_state_update: PatchListener | None = None,
+    ) -> None:
         self._transport = transport
         self._state = DaemonState()
+        self._on_state_update = on_state_update
 
     # ------------------------------------------------------------------
     # Context manager
@@ -55,8 +71,8 @@ class GoXLRClient:
     async def get_status(self) -> DaemonStatus:
         """Fetch full daemon status and update internal state cache."""
         resp = await self._send_checked(DaemonRequest.get_status())
-        if resp.status is not None:
-            self._state.update(resp.status)
+        if resp.raw_status is not None:
+            self._state.set_raw(resp.raw_status)
         return self._state.status
 
     async def get_mic_level(self, serial: str) -> float:
@@ -76,15 +92,12 @@ class GoXLRClient:
 
     async def set_volume(self, serial: str, channel: ChannelName, volume: int) -> None:
         """Set channel volume (0–255)."""
-        from goxlrutil_api.protocol.commands import GoXLRCommand
         await self.command(serial, GoXLRCommand.set_volume(channel, volume))
 
     async def set_fader_mute_state(self, serial: str, fader: FaderName, state: MuteState) -> None:
-        from goxlrutil_api.protocol.commands import GoXLRCommand  # noqa: PLC0415
         await self.command(serial, GoXLRCommand.set_fader_mute_state(fader, state))
 
     async def set_fx_enabled(self, serial: str, enabled: bool) -> None:
-        from goxlrutil_api.protocol.commands import GoXLRCommand  # noqa: PLC0415
         await self.command(serial, GoXLRCommand.set_fx_enabled(enabled))
 
     # ------------------------------------------------------------------
@@ -109,3 +122,8 @@ class GoXLRClient:
     async def _on_patch(self, ops: list[Any]) -> None:
         """Called by the transport when a live Patch event arrives."""
         self._state.apply_patch(ops)
+        if self._on_state_update is not None:
+            try:
+                await self._on_state_update(self._state.status)
+            except Exception as exc:
+                _log.warning("on_state_update callback raised: %s", exc)

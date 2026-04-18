@@ -15,6 +15,7 @@ import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -61,9 +62,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # type: ignore[type-ar
 
 app = FastAPI(title="GoXLR Demo", lifespan=lifespan)
 
-_BASE = __file__[: __file__.rfind("/")]
-templates = Jinja2Templates(directory=f"{_BASE}/templates")
-app.mount("/static", StaticFiles(directory=f"{_BASE}/static"), name="static")
+_BASE = Path(__file__).parent
+templates = Jinja2Templates(directory=_BASE / "templates")
+app.mount("/static", StaticFiles(directory=str(_BASE / "static")), name="static")
 
 
 # ---------------------------------------------------------------------------
@@ -102,8 +103,8 @@ async def set_volume(serial: str, channel: str, volume: int) -> dict[str, Any]:
     return {"ok": True, "channel": channel, "volume": volume}
 
 
-@app.post("/api/mute/{serial}/{fader}/{state}")
-async def set_mute(serial: str, fader: str, state: str) -> dict[str, Any]:
+@app.post("/api/mute/{serial}/{fader}/{state}", response_class=HTMLResponse)
+async def set_mute(request: Request, serial: str, fader: str, state: str) -> HTMLResponse:
     _require_connected()
     try:
         f = FaderName(fader)
@@ -112,7 +113,14 @@ async def set_mute(serial: str, fader: str, state: str) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     assert _client is not None
     await _client.command(serial, GoXLRCommand.set_fader_mute_state(f, s))
-    return {"ok": True, "fader": fader, "state": state}
+    status = await _client.get_status()
+    mixer = status.mixers.get(serial)
+    fs = mixer.fader_status.get(fader) if mixer else None
+    return templates.TemplateResponse(
+        request,
+        "_fader_block.html",
+        {"serial": serial, "fname": fader, "fs": fs},
+    )
 
 
 @app.post("/api/fx/{serial}/{enabled}")
@@ -143,6 +151,36 @@ async def api_status() -> dict[str, Any]:
             },
         }
     return {"connected": True, "mixers": mixers_out}
+
+
+@app.get("/partial/volumes/{serial}", response_class=HTMLResponse)
+async def partial_volumes(request: Request, serial: str) -> HTMLResponse:
+    """Return just the volume rows for one mixer – used for HTMX polling."""
+    _require_connected()
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    return templates.TemplateResponse(
+        request,
+        "_volume_rows.html",
+        {"serial": serial, "mixer": mixer},
+    )
+
+
+@app.get("/partial/faders/{serial}", response_class=HTMLResponse)
+async def partial_faders(request: Request, serial: str) -> HTMLResponse:
+    """Return all fader blocks for one mixer – used for HTMX polling."""
+    _require_connected()
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    fader_names = [f.value for f in FaderName]
+    return templates.TemplateResponse(
+        request,
+        "_fader_rows.html",
+        {"serial": serial, "mixer": mixer, "fader_names": fader_names},
+    )
+
 
 
 def _require_connected() -> None:

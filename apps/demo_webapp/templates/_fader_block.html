@@ -1,0 +1,16 @@
+<div class="fader-block" id="fader-{{ serial }}-{{ fname }}">
+  <label>{{ fname }}: <em>{{ fs.channel.value }}</em></label>
+  <div class="mute-indicator {{ 'muted' if fs.mute_state.value != 'Unmuted' else '' }}">
+    {{ fs.mute_state.value }}
+  </div>
+  <div class="mute-buttons">
+    <button hx-post="/api/mute/{{ serial }}/{{ fname }}/Unmuted"
+            hx-target="#fader-{{ serial }}-{{ fname }}"
+            hx-swap="outerHTML"
+            class="btn-green">Unmute</button>
+    <button hx-post="/api/mute/{{ serial }}/{{ fname }}/MutedToAll"
+            hx-target="#fader-{{ serial }}-{{ fname }}"
+            hx-swap="outerHTML"
+            class="btn-red">Mute All</button>
+  </div>
+</div>

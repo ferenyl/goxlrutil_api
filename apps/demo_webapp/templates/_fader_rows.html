@@ -1,0 +1,8 @@
+{% if mixer %}
+{% for fname in fader_names %}
+{% set fs = mixer.fader_status.get(fname) %}
+{% if fs %}
+{% include "_fader_block.html" %}
+{% endif %}
+{% endfor %}
+{% endif %}
