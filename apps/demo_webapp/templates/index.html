@@ -75,6 +75,16 @@
       </div>
       {% endif %}
 
+      <!-- Button Events -->
+      <h3>Button Events</h3>
+      <div class="button-log-wrap"
+           id="button-log-{{ serial }}"
+           hx-get="/partial/button-log/{{ serial }}"
+           hx-trigger="every 1s"
+           hx-swap="innerHTML">
+        <p class="muted">No button events yet. Press a button on the GoXLR.</p>
+      </div>
+
     </section>
     {% endfor %}
   {% endif %}

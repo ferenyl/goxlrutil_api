@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections import deque
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
@@ -24,6 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from goxlrutil_api import GoXLRClient, UnixSocketTransport, WebSocketTransport
+from goxlrutil_api.events import ButtonEvent
 from goxlrutil_api.exceptions import GoXLRError
 from goxlrutil_api.protocol.commands import GoXLRCommand
 from goxlrutil_api.protocol.responses import DaemonStatus
@@ -34,19 +36,28 @@ _log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Transport selection: prefer WebSocket for live updates, fall back to socket
 # ---------------------------------------------------------------------------
-_USE_WS = os.getenv("GOXLR_USE_WS", "0") == "1"
+_USE_WS = os.getenv("GOXLR_USE_WS", "1") == "1"
 _WS_URL = os.getenv("GOXLR_WS_URL", "ws://localhost:14564/api/websocket")
 
 _client: GoXLRClient | None = None
 _status: DaemonStatus | None = None
 _connected = False
 
+# Up to 50 most recent button events per mixer serial
+_button_log: dict[str, deque[ButtonEvent]] = {}
+_BUTTON_LOG_MAX = 50
+
+
+async def _on_button_event(event: ButtonEvent) -> None:
+    log = _button_log.setdefault(event.serial, deque(maxlen=_BUTTON_LOG_MAX))
+    log.appendleft(event)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # type: ignore[type-arg]
     global _client, _status, _connected
     transport = WebSocketTransport(_WS_URL) if _USE_WS else UnixSocketTransport()
-    _client = GoXLRClient(transport)
+    _client = GoXLRClient(transport, on_button_event=_on_button_event)
     try:
         await _client.__aenter__()
         _status = await _client.get_status()
@@ -181,6 +192,16 @@ async def partial_faders(request: Request, serial: str) -> HTMLResponse:
         {"serial": serial, "mixer": mixer, "fader_names": fader_names},
     )
 
+
+@app.get("/partial/button-log/{serial}", response_class=HTMLResponse)
+async def partial_button_log(request: Request, serial: str) -> HTMLResponse:
+    """Return the recent button event log for one mixer – used for HTMX polling."""
+    events = list(_button_log.get(serial, []))
+    return templates.TemplateResponse(
+        request,
+        "_button_log.html",
+        {"serial": serial, "events": events},
+    )
 
 
 def _require_connected() -> None:

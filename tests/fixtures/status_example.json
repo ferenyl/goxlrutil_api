@@ -19,7 +19,11 @@
   "mixers": {
     "TEST_SERIAL_001": {
       "hardware": {
-        "versions": {"firmware": null, "fpga_count": null, "dice": null},
+        "versions": {
+          "firmware": null,
+          "fpga_count": null,
+          "dice": null
+        },
         "serial_number": "TEST_SERIAL_001",
         "manufactured_date": "2023-01-01",
         "device_type": "Full",
@@ -27,7 +31,11 @@
         "usb_device": {
           "manufacturer_name": "TC Helicon",
           "product_name": "GoXLR",
-          "version": [1, 0, 0],
+          "version": [
+            1,
+            0,
+            0
+          ],
           "bus_number": 1,
           "address": 2,
           "identifier": null
@@ -37,50 +45,152 @@
       "sleep_commands": [],
       "wake_commands": [],
       "fader_status": {
-        "A": {"channel": "Mic", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"},
-        "B": {"channel": "Game", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"},
-        "C": {"channel": "Music", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"},
-        "D": {"channel": "Chat", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"}
+        "A": {
+          "channel": "Mic",
+          "mute_type": "All",
+          "scribble": null,
+          "mute_state": "Unmuted"
+        },
+        "B": {
+          "channel": "Game",
+          "mute_type": "All",
+          "scribble": null,
+          "mute_state": "Unmuted"
+        },
+        "C": {
+          "channel": "Music",
+          "mute_type": "All",
+          "scribble": null,
+          "mute_state": "Unmuted"
+        },
+        "D": {
+          "channel": "Chat",
+          "mute_type": "All",
+          "scribble": null,
+          "mute_state": "Unmuted"
+        }
       },
       "mic_status": {
         "mic_type": "Dynamic",
-        "mic_gains": {"Dynamic": 50, "Condenser": 50, "Jack": 50},
-        "equaliser": {"gain": {}, "frequency": {}},
-        "equaliser_mini": {"gain": {}, "frequency": {}},
+        "mic_gains": {
+          "Dynamic": 50,
+          "Condenser": 50,
+          "Jack": 50
+        },
+        "equaliser": {
+          "gain": {},
+          "frequency": {}
+        },
+        "equaliser_mini": {
+          "gain": {},
+          "frequency": {}
+        },
         "noise_gate": {
-          "threshold": -55, "attack": "Attack10ms", "release": "Attack10ms",
-          "enabled": false, "attenuation": 100
+          "threshold": -55,
+          "attack": "Attack10ms",
+          "release": "Attack10ms",
+          "enabled": false,
+          "attenuation": 100
         },
         "compressor": {
-          "threshold": 0, "ratio": "Ratio1to1", "attack": "Attack0ms",
-          "release": "Release0ms", "makeup_gain": 0
+          "threshold": 0,
+          "ratio": "Ratio1to1",
+          "attack": "Attack0ms",
+          "release": "Release0ms",
+          "makeup_gain": 0
         }
       },
       "levels": {
         "submix_supported": false,
         "output_monitor": "Headphones",
         "volumes": {
-          "Mic": 200, "LineIn": 255, "Console": 255, "System": 255,
-          "Game": 255, "Chat": 255, "Sample": 200, "Music": 255,
-          "Headphones": 200, "MicMonitor": 128, "LineOut": 255
+          "Mic": 200,
+          "LineIn": 255,
+          "Console": 255,
+          "System": 255,
+          "Game": 255,
+          "Chat": 255,
+          "Sample": 200,
+          "Music": 255,
+          "Headphones": 200,
+          "MicMonitor": 128,
+          "LineOut": 255
         },
         "submix": null,
         "bleep": -6,
         "deess": 0
       },
       "router": {
-        "Microphone": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": true, "Sampler": false},
-        "Chat": {"Headphones": true, "BroadcastMix": false, "LineOut": false, "ChatMic": false, "Sampler": false},
-        "Music": {"Headphones": true, "BroadcastMix": true, "LineOut": true, "ChatMic": false, "Sampler": false},
-        "Game": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false},
-        "Console": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false},
-        "LineIn": {"Headphones": true, "BroadcastMix": false, "LineOut": false, "ChatMic": false, "Sampler": false},
-        "System": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false},
-        "Samples": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false}
+        "Microphone": {
+          "Headphones": true,
+          "BroadcastMix": true,
+          "LineOut": false,
+          "ChatMic": true,
+          "Sampler": false
+        },
+        "Chat": {
+          "Headphones": true,
+          "BroadcastMix": false,
+          "LineOut": false,
+          "ChatMic": false,
+          "Sampler": false
+        },
+        "Music": {
+          "Headphones": true,
+          "BroadcastMix": true,
+          "LineOut": true,
+          "ChatMic": false,
+          "Sampler": false
+        },
+        "Game": {
+          "Headphones": true,
+          "BroadcastMix": true,
+          "LineOut": false,
+          "ChatMic": false,
+          "Sampler": false
+        },
+        "Console": {
+          "Headphones": true,
+          "BroadcastMix": true,
+          "LineOut": false,
+          "ChatMic": false,
+          "Sampler": false
+        },
+        "LineIn": {
+          "Headphones": true,
+          "BroadcastMix": false,
+          "LineOut": false,
+          "ChatMic": false,
+          "Sampler": false
+        },
+        "System": {
+          "Headphones": true,
+          "BroadcastMix": true,
+          "LineOut": false,
+          "ChatMic": false,
+          "Sampler": false
+        },
+        "Samples": {
+          "Headphones": true,
+          "BroadcastMix": true,
+          "LineOut": false,
+          "ChatMic": false,
+          "Sampler": false
+        }
       },
-      "cough_button": {"is_toggle": false, "mute_type": "All", "state": "Unmuted"},
+      "cough_button": {
+        "is_toggle": false,
+        "mute_type": "All",
+        "state": "Unmuted"
+      },
       "lighting": {
-        "animation": {"supported": false, "mode": "None", "mod1": 0, "mod2": 0, "waterfall_direction": "Off"},
+        "animation": {
+          "supported": false,
+          "mode": "None",
+          "mod1": 0,
+          "mod2": 0,
+          "waterfall_direction": "Off"
+        },
         "faders": {},
         "buttons": {},
         "simple": {},
@@ -90,7 +200,12 @@
       "effects": null,
       "sampler": null,
       "settings": {
-        "display": {"gate": "Simple", "compressor": "Simple", "equaliser": "Simple", "equaliser_fine": "Simple"},
+        "display": {
+          "gate": "Simple",
+          "compressor": "Simple",
+          "equaliser": "Simple",
+          "equaliser_fine": "Simple"
+        },
         "mute_hold_duration": 500,
         "vc_mute_also_mute_cm": false,
         "enable_monitor_with_fx": false,
@@ -99,7 +214,32 @@
         "fade_duration": 0,
         "vod_mode": "NormalMode"
       },
-      "button_down": {},
+      "button_down": {
+        "Fader1Mute": false,
+        "Fader2Mute": false,
+        "Fader3Mute": false,
+        "Fader4Mute": false,
+        "Bleep": false,
+        "Cough": false,
+        "EffectSelect1": false,
+        "EffectSelect2": false,
+        "EffectSelect3": false,
+        "EffectSelect4": false,
+        "EffectSelect5": false,
+        "EffectSelect6": false,
+        "EffectFx": false,
+        "EffectMegaphone": false,
+        "EffectRobot": false,
+        "EffectHardTune": false,
+        "SamplerSelectA": false,
+        "SamplerSelectB": false,
+        "SamplerSelectC": false,
+        "SamplerTopLeft": false,
+        "SamplerTopRight": false,
+        "SamplerBottomLeft": false,
+        "SamplerBottomRight": false,
+        "SamplerClear": false
+      },
       "profile_name": "Default",
       "mic_profile_name": "Default"
     }
@@ -113,8 +253,12 @@
     "logs_directory": "/home/user/.local/share/goxlr/logs"
   },
   "files": {
-    "profiles": ["Default"],
-    "mic_profiles": ["Default"],
+    "profiles": [
+      "Default"
+    ],
+    "mic_profiles": [
+      "Default"
+    ],
     "presets": [],
     "samples": {},
     "icons": []

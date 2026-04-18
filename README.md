@@ -57,11 +57,13 @@ uvicorn apps.demo_webapp.main:app --reload
 
 Open http://localhost:8000
 
-By default the webapp connects via Unix socket (`/tmp/goxlr.socket`).
-To use WebSocket instead (enables live patch events):
+By default the webapp connects via **WebSocket** (`ws://localhost:14564/api/websocket`),
+which enables live patch events – including button presses, volume changes, and fader updates.
+
+To force Unix socket instead (no live events, request/response only):
 
 ```bash
-GOXLR_USE_WS=1 poetry run uvicorn apps.demo_webapp.main:app --reload
+GOXLR_USE_WS=0 poetry run uvicorn apps.demo_webapp.main:app --reload
 ```
 
 The app starts even if the GoXLR daemon is not running – it will show a "not connected" status.

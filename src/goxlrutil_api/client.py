@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from goxlrutil_api.events import ButtonEvent, ButtonEventType
 from goxlrutil_api.exceptions import CommandError
 from goxlrutil_api.protocol.commands import DaemonRequest, GoXLRCommand
 from goxlrutil_api.protocol.responses import DaemonResponse, DaemonStatus
@@ -16,6 +18,7 @@ from goxlrutil_api.transport.base import Transport
 _log = logging.getLogger(__name__)
 
 PatchListener = Callable[[DaemonStatus], Awaitable[None]]
+ButtonListener = Callable[[ButtonEvent], Awaitable[None]]
 
 
 class GoXLRClient:
@@ -36,16 +39,32 @@ class GoXLRClient:
 
         async with GoXLRClient(transport, on_state_update=on_update) as client:
             ...
+
+    To receive button press / release / long-press events (requires WebSocketTransport)::
+
+        async def on_button(event: ButtonEvent) -> None:
+            print(event.button, event.event_type, event.held_seconds)
+
+        async with GoXLRClient(transport, on_button_event=on_button) as client:
+            ...
     """
 
     def __init__(
         self,
         transport: Transport,
         on_state_update: PatchListener | None = None,
+        on_button_event: ButtonListener | None = None,
+        long_press_threshold: float = 0.5,
     ) -> None:
         self._transport = transport
         self._state = DaemonState()
         self._on_state_update = on_state_update
+        self._on_button_event_cb = on_button_event
+        self._long_press_threshold = long_press_threshold
+        # {serial: {button_name: monotonic press time}}
+        self._button_press_times: dict[str, dict[str, float]] = {}
+        # {serial: {button_name: pending long-press Task}}
+        self._long_press_tasks: dict[str, dict[str, asyncio.Task[None]]] = {}
 
     # ------------------------------------------------------------------
     # Context manager
@@ -57,6 +76,7 @@ class GoXLRClient:
         return self
 
     async def __aexit__(self, *_: object) -> None:
+        self._cancel_all_long_press_tasks()
         await self._transport.disconnect()
 
     # ------------------------------------------------------------------
@@ -110,7 +130,7 @@ class GoXLRClient:
         return self._state
 
     # ------------------------------------------------------------------
-    # Internal
+    # Internal: patch handling
     # ------------------------------------------------------------------
 
     async def _send_checked(self, request: DaemonRequest) -> DaemonResponse:
@@ -121,9 +141,86 @@ class GoXLRClient:
 
     async def _on_patch(self, ops: list[Any]) -> None:
         """Called by the transport when a live Patch event arrives."""
+        # Snapshot button states before applying patch so we can diff them.
+        old_button_down = {
+            serial: dict(mixer.button_down)
+            for serial, mixer in self._state.status.mixers.items()
+        }
+
         self._state.apply_patch(ops)
+
         if self._on_state_update is not None:
             try:
                 await self._on_state_update(self._state.status)
             except Exception as exc:
                 _log.warning("on_state_update callback raised: %s", exc)
+
+        if self._on_button_event_cb is not None:
+            await self._handle_button_changes(old_button_down)
+
+    # ------------------------------------------------------------------
+    # Internal: button event detection
+    # ------------------------------------------------------------------
+
+    async def _handle_button_changes(
+        self, old_bd: dict[str, dict[str, bool]]
+    ) -> None:
+        now = asyncio.get_running_loop().time()
+        for serial, mixer in self._state.status.mixers.items():
+            serial_times = self._button_press_times.setdefault(serial, {})
+            serial_tasks = self._long_press_tasks.setdefault(serial, {})
+            old = old_bd.get(serial, {})
+            for btn_name, is_down in mixer.button_down.items():
+                was_down = old.get(btn_name, False)
+                if is_down and not was_down:
+                    serial_times[btn_name] = now
+                    serial_tasks[btn_name] = asyncio.create_task(
+                        self._long_press_timer(serial, btn_name, now),
+                        name=f"goxlr-longpress-{serial}-{btn_name}",
+                    )
+                    await self._fire_button_event(
+                        serial, btn_name, ButtonEventType.pressed, 0.0
+                    )
+                elif not is_down and was_down:
+                    if task := serial_tasks.pop(btn_name, None):
+                        task.cancel()
+                    held = now - serial_times.pop(btn_name, now)
+                    await self._fire_button_event(
+                        serial, btn_name, ButtonEventType.released, held
+                    )
+
+    async def _long_press_timer(
+        self, serial: str, btn_name: str, press_time: float
+    ) -> None:
+        """Wait for long_press_threshold, then fire a long_pressed event if still held."""
+        try:
+            await asyncio.sleep(self._long_press_threshold)
+        except asyncio.CancelledError:
+            return
+        mixer = self._state.status.mixers.get(serial)
+        if mixer and mixer.button_down.get(btn_name, False):
+            held = asyncio.get_running_loop().time() - press_time
+            await self._fire_button_event(serial, btn_name, ButtonEventType.long_pressed, held)
+
+    async def _fire_button_event(
+        self,
+        serial: str,
+        btn_name: str,
+        event_type: ButtonEventType,
+        held_seconds: float,
+    ) -> None:
+        if self._on_button_event_cb is None:
+            return
+        event = ButtonEvent._from_raw(serial, btn_name, event_type, held_seconds)
+        try:
+            await self._on_button_event_cb(event)
+        except Exception as exc:
+            _log.warning("on_button_event callback raised: %s", exc)
+
+    def _cancel_all_long_press_tasks(self) -> None:
+        for serial_tasks in self._long_press_tasks.values():
+            for task in serial_tasks.values():
+                task.cancel()
+        self._long_press_tasks.clear()
+        self._button_press_times.clear()
+

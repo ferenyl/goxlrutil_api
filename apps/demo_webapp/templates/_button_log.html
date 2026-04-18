@@ -1,0 +1,15 @@
+{% if events %}
+<ol class="button-log">
+  {% for e in events %}
+  <li class="btn-event btn-event--{{ e.event_type.value }}">
+    <span class="btn-name">{{ e.button }}</span>
+    <span class="btn-type">{{ e.event_type.value }}</span>
+    {% if e.held_seconds > 0 %}
+    <span class="btn-held">{{ "%.2f"|format(e.held_seconds) }}s</span>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="muted">No button events yet. Press a button on the GoXLR.</p>
+{% endif %}
