@@ -1,0 +1,21 @@
+# Copilot instructions for this repository
+
+- Target **Python 3.14.4** and manage the project with **Poetry**.
+- Use a **`src/` layout** and keep the publishable library in `src/goxlrutil_api`.
+- Design the library as **async-first**. Add sync wrappers only when they clearly improve the public API.
+- Preserve the GoXLR wire protocol exactly:
+  - Unix socket: `/tmp/goxlr.socket`
+  - frame format: 4-byte big-endian length prefix + JSON payload
+  - HTTP: `POST /api/command` with the same JSON payload as the socket
+  - WebSocket: `/api/websocket` with `{ "id": ..., "data": ... }` envelopes and patch events
+- Separate concerns cleanly:
+  - protocol serialization
+  - transports
+  - state cache / patch handling
+  - demo webapp
+- Prefer **small typed helpers** over broad untyped dictionaries in the public API.
+- Do not hardcode device serial numbers outside of fixtures or local experiments.
+- Keep the demo webapp safe by default: connection status, read-only inspection, and a limited set of reversible write actions first.
+- Tests should default to mocks / fixtures. Live-daemon integration tests must be **explicitly opt-in**.
+- Use modern Python style: type hints everywhere, `pathlib`, `enum`, `dataclasses` or similarly explicit models, and clear exception types.
+- Prefer `ruff`, `pytest`, and `pyright` for linting, tests, and static typing unless the repo establishes a different standard later.
