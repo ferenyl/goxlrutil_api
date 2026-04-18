@@ -17,10 +17,15 @@ A comprehensive reference for humans and AI agents integrating with the library.
 9. [Button Events](#button-events)
 10. [Lighting & Colours](#lighting--colours)
 11. [Effects & Sampler](#effects--sampler)
-12. [Error Handling](#error-handling)
-13. [Synchronous Wrapper](#synchronous-wrapper)
-14. [Full Integration Example](#full-integration-example)
-15. [Protocol Notes](#protocol-notes)
+12. [Fader Assignment & Routing](#fader-assignment--routing)
+13. [Effect Parameters](#effect-parameters)
+14. [Mic Settings](#mic-settings)
+15. [Mix, Monitor & Submix](#mix-monitor--submix)
+16. [Profiles](#profiles)
+17. [Error Handling](#error-handling)
+18. [Synchronous Wrapper](#synchronous-wrapper)
+19. [Full Integration Example](#full-integration-example)
+20. [Protocol Notes](#protocol-notes)
 
 ---
 
@@ -667,7 +672,151 @@ await client.stop_sample(serial, SampleBank.A, SampleButtons.TopLeft)
 
 ---
 
-## Error Handling
+## Fader Assignment & Routing
+
+### Assigning channels to faders
+
+```python
+from goxlrutil_api.protocol.types import FaderName, ChannelName, MuteFunction, MuteState
+
+# Assign the Mic channel to fader A
+await client.set_fader(serial, FaderName.A, ChannelName.Mic)
+
+# Change how the fader A mute button behaves
+# MuteFunction: All, ToStream, ToVoiceChat, ToPhones, ToLineOut
+await client.set_fader_mute_function(serial, FaderName.A, MuteFunction.All)
+
+# Set the cough button mute state
+await client.set_cough_mute_state(serial, MuteState.MutedToAll)
+```
+
+### Routing matrix
+
+The routing matrix controls which input signals are routed to which output buses.
+
+```python
+from goxlrutil_api.protocol.types import InputDevice, OutputDevice
+
+# Enable Mic → BroadcastMix cross-point
+await client.set_router(serial, InputDevice.Microphone, OutputDevice.BroadcastMix, True)
+
+# Disable Chat → Headphones cross-point
+await client.set_router(serial, InputDevice.Chat, OutputDevice.Headphones, False)
+```
+
+**InputDevice values:** `Microphone`, `Chat`, `Music`, `Game`, `Console`, `LineIn`, `System`, `Samples`
+
+**OutputDevice values:** `Headphones`, `BroadcastMix`, `LineOut`, `ChatMic`, `Sampler`
+
+---
+
+## Effect Parameters
+
+Fine-tune the reverb, echo, pitch, and gender shift effects on the active preset.
+
+```python
+from goxlrutil_api.protocol.types import ReverbStyle, EchoStyle, PitchStyle, GenderStyle
+
+# Reverb style and amount (0–100)
+await client.set_reverb_style(serial, ReverbStyle.HockeyArena)
+await client.set_reverb_amount(serial, 40)
+
+# Echo style and amount (0–100)
+await client.set_echo_style(serial, EchoStyle.Studio)
+await client.set_echo_amount(serial, 25)
+
+# Pitch shift style and amount (-24–24 semitones)
+await client.set_pitch_style(serial, PitchStyle.Wide)
+await client.set_pitch_amount(serial, -12)
+
+# Gender shift style and amount (-12–12)
+await client.set_gender_style(serial, GenderStyle.Medium)
+await client.set_gender_amount(serial, 6)
+```
+
+Read current values from state:
+
+```python
+status = await client.get_status()
+mixer = status.mixers[serial]
+reverb = mixer.effects.current.reverb     # Reverb dataclass
+print(reverb.style, reverb.amount)
+```
+
+---
+
+## Mic Settings
+
+```python
+from goxlrutil_api.protocol.types import MicrophoneType
+
+# Set microphone type (affects input impedance and phantom power)
+# MicrophoneType: Dynamic, Condenser, Jack
+await client.set_microphone_type(serial, MicrophoneType.Condenser)
+
+# Enable/disable the noise gate
+await client.set_gate_active(serial, True)
+
+# Set the noise gate threshold (-59–0 dB; lower = more aggressive)
+await client.set_gate_threshold(serial, -20)
+```
+
+Read mic settings from state:
+
+```python
+mic = status.mixers[serial].mic_status
+print(mic.mic_type)                       # MicrophoneType enum
+print(mic.noise_gate.enabled)             # bool
+print(mic.noise_gate.threshold)           # int (dB)
+```
+
+---
+
+## Mix, Monitor & Submix
+
+### Monitor and VOD
+
+```python
+from goxlrutil_api.protocol.types import VodMode, OutputDevice
+
+# Route the headphone monitor mix through effects
+await client.set_monitor_with_fx(serial, True)
+
+# Set the headphone monitor source (which output bus feeds the headphones)
+await client.set_monitor_mix(serial, OutputDevice.BroadcastMix)
+
+# VOD (streamer-safe) mode — silences music for stream while keeping it in headphones
+# VodMode: NormalMode, AnnouncerMode
+await client.set_vod_mode(serial, VodMode.AnnouncerMode)
+
+# Set the volume used to duck audio when the bleep/swear button is pressed (-36–36)
+await client.set_swear_button_volume(serial, -20)
+```
+
+### Submix
+
+The submix system allows Mix A (headphones / direct monitor) and Mix B (stream / broadcast) to have independent per-channel volumes.
+
+```python
+from goxlrutil_api.protocol.types import ChannelName
+
+# Enable the submix system
+await client.set_submix_enabled(serial, True)
+
+# Set the Mix B volume for a specific channel (0–255)
+await client.set_submix_volume(serial, ChannelName.Music, 128)  # music at 50% on stream
+```
+
+### Save profile
+
+```python
+# Persist all current settings to the active profile
+await client.save_profile(serial)
+```
+
+---
+
+## Profiles
 
 ```python
 from goxlrutil_api.exceptions import GoXLRError, ConnectionError, CommandError, ProtocolError

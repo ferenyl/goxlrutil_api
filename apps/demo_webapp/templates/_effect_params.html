@@ -1,0 +1,80 @@
+{% if effects %}
+{% set cur = effects.current %}
+<div class="effect-params">
+
+  <div class="ep-group">
+    <h4>Reverb</h4>
+    <label>Style
+      <select onchange="post('/api/effects/{{ serial }}/reverb/style/' + this.value)">
+        {% for s in reverb_styles %}
+        <option value="{{ s }}" {% if cur.reverb.style.value == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Amount
+      <input type="range" min="0" max="100"
+             value="{{ cur.reverb.amount }}"
+             oninput="this.nextElementSibling.textContent = this.value"
+             onchange="post('/api/effects/{{ serial }}/reverb/amount/' + this.value)">
+      <span>{{ cur.reverb.amount }}</span>
+    </label>
+  </div>
+
+  <div class="ep-group">
+    <h4>Echo</h4>
+    <label>Style
+      <select onchange="post('/api/effects/{{ serial }}/echo/style/' + this.value)">
+        {% for s in echo_styles %}
+        <option value="{{ s }}" {% if cur.echo.style.value == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Amount
+      <input type="range" min="0" max="100"
+             value="{{ cur.echo.amount }}"
+             oninput="this.nextElementSibling.textContent = this.value"
+             onchange="post('/api/effects/{{ serial }}/echo/amount/' + this.value)">
+      <span>{{ cur.echo.amount }}</span>
+    </label>
+  </div>
+
+  <div class="ep-group">
+    <h4>Pitch</h4>
+    <label>Style
+      <select onchange="post('/api/effects/{{ serial }}/pitch/style/' + this.value)">
+        {% for s in pitch_styles %}
+        <option value="{{ s }}" {% if cur.pitch.style.value == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Amount
+      <input type="range" min="-24" max="24"
+             value="{{ cur.pitch.amount }}"
+             oninput="this.nextElementSibling.textContent = this.value"
+             onchange="post('/api/effects/{{ serial }}/pitch/amount/' + this.value)">
+      <span>{{ cur.pitch.amount }}</span>
+    </label>
+  </div>
+
+  <div class="ep-group">
+    <h4>Gender</h4>
+    <label>Style
+      <select onchange="post('/api/effects/{{ serial }}/gender/style/' + this.value)">
+        {% for s in gender_styles %}
+        <option value="{{ s }}" {% if cur.gender.style.value == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Amount
+      <input type="range" min="-12" max="12"
+             value="{{ cur.gender.amount }}"
+             oninput="this.nextElementSibling.textContent = this.value"
+             onchange="post('/api/effects/{{ serial }}/gender/amount/' + this.value)">
+      <span>{{ cur.gender.amount }}</span>
+    </label>
+  </div>
+
+</div>
+{% else %}
+<p class="dim">No effect data available.</p>
+{% endif %}

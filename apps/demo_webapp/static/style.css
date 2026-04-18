@@ -288,3 +288,43 @@ button {
   min-width: 12rem;
 }
 .profile-row .muted { font-size: 0.75rem; color: #64748b; }
+
+/* Routing matrix */
+.router-section { overflow-x: auto; }
+.router-grid table { border-collapse: collapse; font-size: 0.75rem; }
+.router-grid th, .router-grid td { border: 1px solid #334155; padding: 0.3rem 0.5rem; text-align: center; }
+.router-grid th { background: #1e293b; color: #94a3b8; }
+.router-grid td input[type=checkbox] { cursor: pointer; accent-color: #3b82f6; }
+
+/* Effect parameters */
+.effect-params { display: flex; flex-wrap: wrap; gap: 1rem; }
+.ep-group { background: #1e293b; border-radius: 6px; padding: 0.75rem 1rem; min-width: 12rem; }
+.ep-group h4 { margin: 0 0 0.5rem; font-size: 0.85rem; color: #60a5fa; }
+.ep-group label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem; }
+.ep-group select, .ep-group input[type=range] { width: 100%; }
+.ep-group select { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 4px; padding: 0.2rem; }
+
+/* Mic settings */
+.mic-settings { display: flex; flex-direction: column; gap: 0.5rem; }
+.mic-row { display: flex; align-items: center; gap: 0.75rem; }
+.mic-row label { display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: #94a3b8; }
+.mic-row select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 4px; padding: 0.25rem; }
+
+/* Mix / monitor */
+.mix-section { display: flex; flex-direction: column; gap: 0.5rem; }
+.mix-row { display: flex; align-items: center; gap: 0.75rem; }
+.mix-row label { display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: #94a3b8; min-width: 14rem; }
+.mix-row select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 4px; padding: 0.25rem; }
+
+/* Fader assignment */
+.fader-assign-section { display: flex; flex-direction: column; gap: 0.4rem; }
+.fader-assign-row { display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; }
+.fader-assign-row span { min-width: 4.5rem; color: #94a3b8; }
+.fader-assign-row select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 4px; padding: 0.25rem; min-width: 10rem; }
+
+/* Save row */
+.save-row { margin-top: 0.75rem; }
+.save-row button { background: #1d4ed8; color: #eff6ff; border: none; border-radius: 4px; padding: 0.4rem 1rem; cursor: pointer; font-size: 0.85rem; }
+.save-row button:hover { background: #2563eb; }
+
+.dim { color: #64748b; font-size: 0.8rem; }

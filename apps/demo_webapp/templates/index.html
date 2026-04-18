@@ -108,6 +108,88 @@
         {% endfor %}
       </div>
 
+      <!-- Routing matrix -->
+      <h3>Routing Matrix</h3>
+      <div class="router-section"
+           id="router-{{ serial }}"
+           hx-get="/partial/router/{{ serial }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <p class="dim">Loading…</p>
+      </div>
+
+      <!-- Effect parameters -->
+      <h3>Effect Parameters</h3>
+      <div class="effect-params-section"
+           id="effect-params-{{ serial }}"
+           hx-get="/partial/effect-params/{{ serial }}"
+           hx-trigger="every 3s"
+           hx-swap="innerHTML">
+        <p class="dim">Loading…</p>
+      </div>
+
+      <!-- Mic settings -->
+      <h3>Mic Settings</h3>
+      <div class="mic-settings-section"
+           id="mic-settings-{{ serial }}"
+           hx-get="/partial/mic-settings/{{ serial }}"
+           hx-trigger="every 5s"
+           hx-swap="innerHTML">
+        <p class="dim">Loading…</p>
+      </div>
+
+      <!-- Mix / monitor -->
+      <h3>Mix &amp; Monitor</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Monitor with FX
+            <input type="checkbox"
+                   {% if mixer.settings and mixer.settings.enable_monitor_with_fx %}checked{% endif %}
+                   onchange="post('/api/monitor-with-fx/{{ serial }}/' + this.checked)">
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>VOD mode
+            <select onchange="post('/api/vod-mode/{{ serial }}/' + this.value)">
+              {% set current_vod = mixer.settings.vod_mode.value if mixer.settings else 'NormalMode' %}
+              {% for m in ["Routable", "StreamNoMusic"] %}
+              <option value="{{ m }}" {% if current_vod == m %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Swear/bleep duck volume
+            <input type="range" min="-34" max="0" value="0"
+                   oninput="this.nextElementSibling.textContent = this.value"
+                   onchange="post('/api/swear-volume/{{ serial }}/' + this.value)">
+            <span>0</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Fader assignment -->
+      <h3>Fader Assignment</h3>
+      <div class="fader-assign-section">
+        {% set channels = ["Mic","LineIn","Console","System","Game","Chat","Sample","Music","Headphones","MicMonitor","LineOut","ChatMic"] %}
+        {% for fdr in ["A","B","C","D"] %}
+        {% set current_ch = mixer.fader_status.get(fdr).channel.value if mixer and mixer.fader_status.get(fdr) else "" %}
+        <div class="fader-assign-row">
+          <span>Fader {{ fdr }}</span>
+          <select onchange="post('/api/fader/{{ serial }}/{{ fdr }}/assign/' + this.value)">
+            {% for ch in channels %}
+            <option value="{{ ch }}" {% if ch == current_ch %}selected{% endif %}>{{ ch }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Save profile -->
+      <div class="save-row">
+        <button onclick="post('/api/profile/{{ serial }}/save')">💾 Save Profile</button>
+      </div>
+
       <!-- Button Events -->
       <h3>Button Events</h3>
       <div class="button-log-wrap"
@@ -191,10 +273,18 @@
     // Don't let HTMX overwrite a slider the user is currently dragging
     document.addEventListener('htmx:beforeSwap', function(e) {
       if (!e.detail.target) return;
-      const volumesDiv = e.detail.target.closest?.('[id^="volumes-"]') || e.detail.target;
+      const target = e.detail.target;
+
+      // Don't swap any polled section while the user has focus on an input/select inside it
+      if (target.querySelector(':focus')) {
+        e.detail.shouldSwap = false;
+        return;
+      }
+
+      // Also don't swap volume rows while a slider is actively being dragged
+      const volumesDiv = target.closest?.('[id^="volumes-"]') || target;
       if (!volumesDiv.id?.startsWith('volumes-')) return;
       const serial = volumesDiv.id.replace('volumes-', '');
-      // If any slider for this serial is active, skip the swap
       for (const key of _activeSliders) {
         if (key.startsWith(serial)) { e.detail.shouldSwap = false; return; }
       }
@@ -246,6 +336,13 @@
     function loadMicProfile(serial, name) {
       fetch(`/api/mic-profile/${serial}/${encodeURIComponent(name)}`, {method: 'POST'})
         .then(r => r.json()).then(d => flash(d.ok ? `Mic Profile → ${d.mic_profile}` : d.detail, d.ok))
+        .catch(() => flash('Request failed', false));
+    }
+
+    // Generic POST helper used by onchange handlers
+    function post(url) {
+      fetch(url, {method: 'POST'})
+        .then(r => r.json()).then(d => flash(d.ok ? `OK` : (d.detail || 'Error'), d.ok))
         .catch(() => flash('Request failed', false));
     }
   </script>

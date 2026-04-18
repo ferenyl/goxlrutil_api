@@ -410,8 +410,8 @@ class CompressorRatio(str, Enum):
 
 
 class VodMode(str, Enum):
-    AnnouncerMode = "AnnouncerMode"
-    NormalMode = "NormalMode"
+    Routable = "Routable"
+    StreamNoMusic = "StreamNoMusic"
 
 
 class SubMixChannelName(str, Enum):

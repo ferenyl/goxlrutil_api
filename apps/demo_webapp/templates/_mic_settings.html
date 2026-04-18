@@ -1,0 +1,29 @@
+<div class="mic-settings">
+  <div class="mic-row">
+    <label>Mic type
+      <select onchange="post('/api/mic/{{ serial }}/type/' + this.value)">
+        {% for t in mic_types %}
+        <option value="{{ t }}" {% if mic and mic.mic_type.value == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  {% if mic %}
+  <div class="mic-row">
+    <label>Gate active
+      <input type="checkbox"
+             {% if mic.noise_gate.enabled %}checked{% endif %}
+             onchange="post('/api/mic/{{ serial }}/gate/active/' + this.checked)">
+    </label>
+  </div>
+  <div class="mic-row">
+    <label>Gate threshold (dB)
+      <input type="range" min="-59" max="0"
+             value="{{ mic.noise_gate.threshold }}"
+             oninput="this.nextElementSibling.textContent = this.value + ' dB'"
+             onchange="post('/api/mic/{{ serial }}/gate/threshold/' + this.value)">
+      <span>{{ mic.noise_gate.threshold }} dB</span>
+    </label>
+  </div>
+  {% endif %}
+</div>

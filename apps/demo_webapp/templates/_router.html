@@ -1,0 +1,28 @@
+<div class="router-grid">
+  <table>
+    <thead>
+      <tr>
+        <th>Input \ Output</th>
+        {% for out in outputs %}
+        <th>{{ out }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for inp in inputs %}
+      <tr>
+        <td><strong>{{ inp }}</strong></td>
+        {% for out in outputs %}
+        <td>
+          {% set checked = router.get(inp, {}).get(out, False) %}
+          <input type="checkbox"
+                 {% if checked %}checked{% endif %}
+                 onchange="post('/api/router/{{ serial }}/{{ inp }}/{{ out }}/' + this.checked)"
+                 title="{{ inp }} → {{ out }}">
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

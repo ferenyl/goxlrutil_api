@@ -397,7 +397,7 @@ class Settings:
     reset_sampler_on_clear: bool = False
     lock_faders: bool = False
     fade_duration: int = 0
-    vod_mode: VodMode = VodMode.NormalMode
+    vod_mode: VodMode = VodMode.Routable
 
 
 # ---------------------------------------------------------------------------

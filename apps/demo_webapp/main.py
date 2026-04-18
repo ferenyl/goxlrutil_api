@@ -33,11 +33,20 @@ from goxlrutil_api.protocol.responses import DaemonStatus
 from goxlrutil_api.protocol.types import (
     Button,
     ChannelName,
+    EchoStyle,
     EffectBankPresets,
     FaderName,
+    GenderStyle,
+    InputDevice,
+    MicrophoneType,
+    MuteFunction,
     MuteState,
+    OutputDevice,
+    PitchStyle,
+    ReverbStyle,
     SampleBank,
     SampleButtons,
+    VodMode,
 )
 
 _log = logging.getLogger(__name__)
@@ -399,3 +408,323 @@ async def set_fader_colour(
 def _require_connected() -> None:
     if not _connected or _client is None:
         raise HTTPException(status_code=503, detail="Not connected to GoXLR daemon")
+
+
+# ---------------------------------------------------------------------------
+# Fader / routing / misc API
+# ---------------------------------------------------------------------------
+
+@app.post("/api/fader/{serial}/{fader}/assign/{channel}")
+async def set_fader_channel(serial: str, fader: str, channel: str) -> dict[str, Any]:
+    """Assign a channel to a fader slot."""
+    _require_connected()
+    assert _client is not None
+    try:
+        f = FaderName(fader)
+        ch = ChannelName(channel)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_fader(serial, f, ch)
+    return {"ok": True, "fader": fader, "channel": channel}
+
+
+@app.post("/api/fader/{serial}/{fader}/mute-function/{mf}")
+async def set_fader_mute_function(serial: str, fader: str, mf: str) -> dict[str, Any]:
+    """Set the mute function for a fader button."""
+    _require_connected()
+    assert _client is not None
+    try:
+        f = FaderName(fader)
+        mute_fn = MuteFunction(mf)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_fader_mute_function(serial, f, mute_fn)
+    return {"ok": True, "fader": fader, "mute_function": mf}
+
+
+@app.post("/api/cough/{serial}/{state}")
+async def set_cough_mute_state(serial: str, state: str) -> dict[str, Any]:
+    """Set the cough button mute state."""
+    _require_connected()
+    assert _client is not None
+    try:
+        ms = MuteState(state)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_cough_mute_state(serial, ms)
+    return {"ok": True, "state": state}
+
+
+@app.post("/api/router/{serial}/{input}/{output}/{enabled}")
+async def set_router(
+    serial: str, input: str, output: str, enabled: bool
+) -> dict[str, Any]:
+    """Enable or disable a routing matrix cross-point."""
+    _require_connected()
+    assert _client is not None
+    try:
+        inp = InputDevice(input)
+        out = OutputDevice(output)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_router(serial, inp, out, enabled)
+    return {"ok": True, "input": input, "output": output, "enabled": enabled}
+
+
+@app.get("/partial/router/{serial}", response_class=HTMLResponse)
+async def partial_router(request: Request, serial: str) -> HTMLResponse:
+    """Routing matrix partial for HTMX polling."""
+    _require_connected()
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    router = mixer.router if mixer else {}
+    return templates.TemplateResponse(
+        request,
+        "_router.html",
+        {
+            "serial": serial,
+            "router": router,
+            "inputs": [i.value for i in InputDevice],
+            "outputs": [o.value for o in OutputDevice],
+        },
+    )
+
+
+@app.post("/api/profile/{serial}/save")
+async def save_profile(serial: str) -> dict[str, Any]:
+    """Save the current settings to the active profile."""
+    _require_connected()
+    assert _client is not None
+    await _client.save_profile(serial)
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Effect parameters
+# ---------------------------------------------------------------------------
+
+@app.post("/api/effects/{serial}/reverb/style/{style}")
+async def set_reverb_style(serial: str, style: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = ReverbStyle(style)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_reverb_style(serial, s)
+    return {"ok": True, "style": style}
+
+
+@app.post("/api/effects/{serial}/reverb/amount/{amount}")
+async def set_reverb_amount(serial: str, amount: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_reverb_amount(serial, amount)
+    return {"ok": True, "amount": amount}
+
+
+@app.post("/api/effects/{serial}/echo/style/{style}")
+async def set_echo_style(serial: str, style: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = EchoStyle(style)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_echo_style(serial, s)
+    return {"ok": True, "style": style}
+
+
+@app.post("/api/effects/{serial}/echo/amount/{amount}")
+async def set_echo_amount(serial: str, amount: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_echo_amount(serial, amount)
+    return {"ok": True, "amount": amount}
+
+
+@app.post("/api/effects/{serial}/pitch/style/{style}")
+async def set_pitch_style(serial: str, style: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = PitchStyle(style)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_pitch_style(serial, s)
+    return {"ok": True, "style": style}
+
+
+@app.post("/api/effects/{serial}/pitch/amount/{amount}")
+async def set_pitch_amount(serial: str, amount: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_pitch_amount(serial, amount)
+    return {"ok": True, "amount": amount}
+
+
+@app.post("/api/effects/{serial}/gender/style/{style}")
+async def set_gender_style(serial: str, style: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = GenderStyle(style)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_gender_style(serial, s)
+    return {"ok": True, "style": style}
+
+
+@app.post("/api/effects/{serial}/gender/amount/{amount}")
+async def set_gender_amount(serial: str, amount: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_gender_amount(serial, amount)
+    return {"ok": True, "amount": amount}
+
+
+@app.get("/partial/effect-params/{serial}", response_class=HTMLResponse)
+async def partial_effect_params(request: Request, serial: str) -> HTMLResponse:
+    """Effect parameters partial for HTMX polling."""
+    _require_connected()
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    effects = mixer.effects if mixer else None
+    return templates.TemplateResponse(
+        request,
+        "_effect_params.html",
+        {
+            "serial": serial,
+            "effects": effects,
+            "reverb_styles": [v.value for v in ReverbStyle],
+            "echo_styles": [v.value for v in EchoStyle],
+            "pitch_styles": [v.value for v in PitchStyle],
+            "gender_styles": [v.value for v in GenderStyle],
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mic settings
+# ---------------------------------------------------------------------------
+
+@app.post("/api/mic/{serial}/type/{mic_type}")
+async def set_mic_type(serial: str, mic_type: str) -> dict[str, Any]:
+    """Set the microphone type."""
+    _require_connected()
+    assert _client is not None
+    try:
+        mt = MicrophoneType(mic_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_microphone_type(serial, mt)
+    return {"ok": True, "mic_type": mic_type}
+
+
+@app.post("/api/mic/{serial}/gate/threshold/{threshold}")
+async def set_gate_threshold(serial: str, threshold: int) -> dict[str, Any]:
+    """Set the noise gate threshold (-59–0 dB)."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_gate_threshold(serial, threshold)
+    return {"ok": True, "threshold": threshold}
+
+
+@app.post("/api/mic/{serial}/gate/active/{active}")
+async def set_gate_active(serial: str, active: bool) -> dict[str, Any]:
+    """Enable or disable the noise gate."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_gate_active(serial, active)
+    return {"ok": True, "active": active}
+
+
+@app.get("/partial/mic-settings/{serial}", response_class=HTMLResponse)
+async def partial_mic_settings(request: Request, serial: str) -> HTMLResponse:
+    """Mic settings partial for HTMX polling."""
+    _require_connected()
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    mic = mixer.mic_status if mixer else None
+    return templates.TemplateResponse(
+        request,
+        "_mic_settings.html",
+        {
+            "serial": serial,
+            "mic": mic,
+            "mic_types": [t.value for t in MicrophoneType],
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mix / monitor / submix
+# ---------------------------------------------------------------------------
+
+@app.post("/api/monitor-with-fx/{serial}/{enabled}")
+async def set_monitor_with_fx(serial: str, enabled: bool) -> dict[str, Any]:
+    """Route monitor through FX or bypass."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_monitor_with_fx(serial, enabled)
+    return {"ok": True, "enabled": enabled}
+
+
+@app.post("/api/vod-mode/{serial}/{mode}")
+async def set_vod_mode(serial: str, mode: str) -> dict[str, Any]:
+    """Set the VOD mode."""
+    _require_connected()
+    assert _client is not None
+    try:
+        vm = VodMode(mode)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_vod_mode(serial, vm)
+    return {"ok": True, "mode": mode}
+
+
+@app.post("/api/swear-volume/{serial}/{volume}")
+async def set_swear_volume(serial: str, volume: int) -> dict[str, Any]:
+    """Set the swear/bleep button duck volume."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_swear_button_volume(serial, volume)
+    return {"ok": True, "volume": volume}
+
+
+@app.post("/api/submix/{serial}/enabled/{enabled}")
+async def set_submix_enabled(serial: str, enabled: bool) -> dict[str, Any]:
+    """Enable or disable the submix system."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_submix_enabled(serial, enabled)
+    return {"ok": True, "enabled": enabled}
+
+
+@app.post("/api/submix/{serial}/volume/{channel}/{volume}")
+async def set_submix_volume(serial: str, channel: str, volume: int) -> dict[str, Any]:
+    """Set the submix B volume for a channel."""
+    _require_connected()
+    assert _client is not None
+    try:
+        ch = ChannelName(channel)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_submix_volume(serial, ch, volume)
+    return {"ok": True, "channel": channel, "volume": volume}
+
+
+@app.post("/api/monitor-mix/{serial}/{output}")
+async def set_monitor_mix(serial: str, output: str) -> dict[str, Any]:
+    """Set the headphone monitor mix source."""
+    _require_connected()
+    assert _client is not None
+    try:
+        out = OutputDevice(output)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_monitor_mix(serial, out)
+    return {"ok": True, "output": output}

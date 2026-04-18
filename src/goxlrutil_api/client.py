@@ -18,15 +18,24 @@ from goxlrutil_api.protocol.types import (
     ButtonColourGroups,
     ButtonColourOffStyle,
     ChannelName,
+    EchoStyle,
     EffectBankPresets,
     EncoderColourTargets,
     FaderDisplayStyle,
     FaderName,
+    GenderStyle,
+    InputDevice,
+    MicrophoneType,
+    MuteFunction,
     MuteState,
+    OutputDevice,
+    PitchStyle,
+    ReverbStyle,
     SampleBank,
     SampleButtons,
     SamplerColourTargets,
     SimpleColourTargets,
+    VodMode,
     WaterfallDirection,
 )
 from goxlrutil_api.state import DaemonState
@@ -126,6 +135,14 @@ class GoXLRClient:
     # ------------------------------------------------------------------
     # Convenience helpers
     # ------------------------------------------------------------------
+
+    @property
+    def serials(self) -> list[str]:
+        """Return the list of connected mixer serial numbers from the state cache.
+
+        Call ``get_status()`` at least once to populate the cache.
+        """
+        return list(self._state.status.mixers.keys())
 
     async def set_volume(self, serial: str, channel: ChannelName, volume: int) -> None:
         """Set channel volume (0–255)."""
@@ -264,9 +281,136 @@ class GoXLRClient:
         """Load a mic profile by name."""
         await self.command(serial, GoXLRCommand.load_mic_profile(name))
 
+    async def save_profile(self, serial: str) -> None:
+        """Save the current settings to the active profile."""
+        await self.command(serial, GoXLRCommand.save_profile())
+
     # ------------------------------------------------------------------
-    # Lighting / colour helpers
+    # Routing matrix
     # ------------------------------------------------------------------
+
+    async def set_router(
+        self, serial: str, input: InputDevice, output: OutputDevice, enabled: bool
+    ) -> None:
+        """Enable or disable a routing matrix cross-point (input → output)."""
+        await self.command(serial, GoXLRCommand.set_router(input, output, enabled))
+
+    # ------------------------------------------------------------------
+    # Fader assignment
+    # ------------------------------------------------------------------
+
+    async def set_fader(self, serial: str, fader: FaderName, channel: ChannelName) -> None:
+        """Assign a channel to a fader slot."""
+        await self.command(serial, GoXLRCommand.set_fader(fader, channel))
+
+    async def set_fader_mute_function(
+        self, serial: str, fader: FaderName, mute_function: MuteFunction
+    ) -> None:
+        """Set how the mute button on a fader behaves (which outputs it mutes)."""
+        await self.command(serial, GoXLRCommand.set_fader_mute_function(fader, mute_function))
+
+    async def set_cough_mute_state(self, serial: str, state: MuteState) -> None:
+        """Set the mute state of the Cough button."""
+        await self.command(serial, GoXLRCommand.set_cough_mute_state(state))
+
+    # ------------------------------------------------------------------
+    # Effect parameters
+    # ------------------------------------------------------------------
+
+    async def set_reverb_style(self, serial: str, style: ReverbStyle) -> None:
+        """Set the reverb effect style."""
+        await self.command(serial, GoXLRCommand.set_reverb_style(style))
+
+    async def set_reverb_amount(self, serial: str, amount: int) -> None:
+        """Set the reverb send amount (0–100)."""
+        await self.command(serial, GoXLRCommand.set_reverb_amount(amount))
+
+    async def set_echo_style(self, serial: str, style: EchoStyle) -> None:
+        """Set the echo effect style."""
+        await self.command(serial, GoXLRCommand.set_echo_style(style))
+
+    async def set_echo_amount(self, serial: str, amount: int) -> None:
+        """Set the echo send amount (0–100)."""
+        await self.command(serial, GoXLRCommand.set_echo_amount(amount))
+
+    async def set_pitch_style(self, serial: str, style: PitchStyle) -> None:
+        """Set the pitch shift style."""
+        await self.command(serial, GoXLRCommand.set_pitch_style(style))
+
+    async def set_pitch_amount(self, serial: str, amount: int) -> None:
+        """Set the pitch shift amount (-24–24 semitones)."""
+        await self.command(serial, GoXLRCommand.set_pitch_amount(amount))
+
+    async def set_gender_style(self, serial: str, style: GenderStyle) -> None:
+        """Set the gender shift style."""
+        await self.command(serial, GoXLRCommand.set_gender_style(style))
+
+    async def set_gender_amount(self, serial: str, amount: int) -> None:
+        """Set the gender shift amount (-12–12)."""
+        await self.command(serial, GoXLRCommand.set_gender_amount(amount))
+
+    # ------------------------------------------------------------------
+    # Mic settings
+    # ------------------------------------------------------------------
+
+    async def set_microphone_type(self, serial: str, mic_type: MicrophoneType) -> None:
+        """Set the microphone type (Dynamic / Condenser / Jack)."""
+        await self.command(serial, GoXLRCommand.set_microphone_type(mic_type))
+
+    async def set_gate_threshold(self, serial: str, threshold: int) -> None:
+        """Set the noise gate threshold (-59–0 dB)."""
+        await self.command(serial, GoXLRCommand.set_gate_threshold(threshold))
+
+    async def set_gate_active(self, serial: str, active: bool) -> None:
+        """Enable or disable the noise gate."""
+        await self.command(serial, GoXLRCommand.set_gate_active(active))
+
+    # ------------------------------------------------------------------
+    # Mix & monitor
+    # ------------------------------------------------------------------
+
+    async def set_swear_button_volume(self, serial: str, volume: float) -> None:
+        """Set the duck volume used by the bleep/swear button (-34–0 dB).
+
+        Values are rounded to the nearest integer and clamped silently.
+        """
+        await self.command(serial, GoXLRCommand.set_swear_button_volume(max(-34, min(0, round(volume)))))
+
+    async def set_swear_button_volume_pct(self, serial: str, percent: float) -> None:
+        """Set the duck volume used by the bleep/swear button as a percentage (0–100).
+
+        0 % maps to -34 dB (minimum), 100 % maps to 0 dB (no ducking).
+        Values outside 0–100 are clamped silently.
+        """
+        pct = max(0.0, min(100.0, percent))
+        volume = round(-34 + pct / 100 * 34)
+        await self.command(serial, GoXLRCommand.set_swear_button_volume(volume))
+
+    async def set_monitor_with_fx(self, serial: str, enabled: bool) -> None:
+        """Route monitor mix through effects (True) or bypass effects (False)."""
+        await self.command(serial, GoXLRCommand.set_monitor_with_fx(enabled))
+
+    async def set_vod_mode(self, serial: str, mode: VodMode) -> None:
+        """Set the VOD (stream-safe music) mode."""
+        await self.command(serial, GoXLRCommand.set_vod_mode(mode))
+
+    # ------------------------------------------------------------------
+    # Submix
+    # ------------------------------------------------------------------
+
+    async def set_submix_enabled(self, serial: str, enabled: bool) -> None:
+        """Enable or disable the submix system."""
+        await self.command(serial, GoXLRCommand.set_submix_enabled(enabled))
+
+    async def set_submix_volume(
+        self, serial: str, channel: ChannelName, volume: int
+    ) -> None:
+        """Set the submix B volume for a channel (0–255)."""
+        await self.command(serial, GoXLRCommand.set_submix_volume(channel, volume))
+
+    async def set_monitor_mix(self, serial: str, output: OutputDevice) -> None:
+        """Set which output is used as the headphone monitor mix source."""
+        await self.command(serial, GoXLRCommand.set_monitor_mix(output))
 
     async def set_button_colour(
         self,

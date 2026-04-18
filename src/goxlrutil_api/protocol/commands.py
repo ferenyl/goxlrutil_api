@@ -350,7 +350,7 @@ class GoXLRCommand:
 
     @staticmethod
     def set_swear_button_volume(volume: int) -> GoXLRCommand:
-        """volume -36..36"""
+        """volume -34..0"""
         return GoXLRCommand("SetSwearButtonVolume", volume)
 
     @staticmethod
