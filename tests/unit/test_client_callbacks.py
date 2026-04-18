@@ -2,22 +2,19 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 import pytest
 
 from goxlrutil_api.client import GoXLRClient
 from goxlrutil_api.protocol.commands import DaemonRequest
-from goxlrutil_api.protocol.responses import DaemonResponse
-from goxlrutil_api.protocol.responses import DaemonStatus
+from goxlrutil_api.protocol.responses import DaemonResponse, DaemonStatus
 from goxlrutil_api.transport.base import (
     ConnectCallback,
     DisconnectCallback,
     PatchCallback,
     Transport,
 )
-
 
 # ---------------------------------------------------------------------------
 # Stub transport with connect/disconnect hooks
@@ -173,7 +170,7 @@ async def test_on_connect_callback_called_on_reconnect() -> None:
         connect_calls.append(1)
 
     transport = CallbackTransport(_status_raw())
-    async with GoXLRClient(transport, on_connect=on_connect) as client:
+    async with GoXLRClient(transport, on_connect=on_connect) as _:
         await transport.fire_connect()
 
     assert len(connect_calls) == 1
@@ -187,7 +184,7 @@ async def test_on_connect_called_multiple_reconnects() -> None:
         connect_calls.append(1)
 
     transport = CallbackTransport(_status_raw())
-    async with GoXLRClient(transport, on_connect=on_connect) as client:
+    async with GoXLRClient(transport, on_connect=on_connect) as _:
         await transport.fire_connect()
         await transport.fire_connect()
 
@@ -197,7 +194,7 @@ async def test_on_connect_called_multiple_reconnects() -> None:
 @pytest.mark.asyncio
 async def test_no_on_connect_does_not_crash() -> None:
     transport = CallbackTransport(_status_raw())
-    async with GoXLRClient(transport) as client:
+    async with GoXLRClient(transport) as _:
         await transport.fire_connect()  # should not raise
 
 
@@ -213,7 +210,7 @@ async def test_on_disconnect_callback_called() -> None:
         disconnect_calls.append(1)
 
     transport = CallbackTransport(_status_raw())
-    async with GoXLRClient(transport, on_disconnect=on_disconnect) as client:
+    async with GoXLRClient(transport, on_disconnect=on_disconnect) as _:
         await transport.fire_disconnect()
 
     assert len(disconnect_calls) == 1
@@ -227,7 +224,7 @@ async def test_on_disconnect_called_multiple_times() -> None:
         disconnect_calls.append(1)
 
     transport = CallbackTransport(_status_raw())
-    async with GoXLRClient(transport, on_disconnect=on_disconnect) as client:
+    async with GoXLRClient(transport, on_disconnect=on_disconnect) as _:
         await transport.fire_disconnect()
         await transport.fire_disconnect()
 
@@ -237,7 +234,7 @@ async def test_on_disconnect_called_multiple_times() -> None:
 @pytest.mark.asyncio
 async def test_no_on_disconnect_does_not_crash() -> None:
     transport = CallbackTransport(_status_raw())
-    async with GoXLRClient(transport) as client:
+    async with GoXLRClient(transport) as _:
         await transport.fire_disconnect()  # should not raise
 
 

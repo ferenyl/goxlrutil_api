@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from goxlrutil_api.client import GoXLRClient
-from goxlrutil_api.protocol.commands import DaemonRequest, GoXLRCommand
+from goxlrutil_api.protocol.commands import DaemonRequest
 from goxlrutil_api.protocol.responses import DaemonResponse
 from goxlrutil_api.protocol.types import ChannelName
 from goxlrutil_api.transport.base import PatchCallback, Transport
-
 
 # ---------------------------------------------------------------------------
 # Minimal stub transport

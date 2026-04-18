@@ -562,7 +562,9 @@ def test_set_button_off_style() -> None:
 
 
 def test_set_sampler_colour() -> None:
-    cmd = GoXLRCommand.set_sampler_colour(SamplerColourTargets.SamplerSelectA, "FF0000", "00FF00", "0000FF")
+    cmd = GoXLRCommand.set_sampler_colour(
+        SamplerColourTargets.SamplerSelectA, "FF0000", "00FF00", "0000FF"
+    )
     assert cmd.to_dict() == {
         "SetSamplerColour": ["SamplerSelectA", "FF0000", "00FF00", "0000FF"]
     }
