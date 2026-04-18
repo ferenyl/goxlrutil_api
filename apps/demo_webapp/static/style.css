@@ -273,3 +273,18 @@ button {
   font-size: 0.75rem;
 }
 .btn-stop:hover { background: #991b1b; }
+
+/* Profile selector */
+.profile-section { display: flex; flex-direction: column; gap: 0.5rem; }
+.profile-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.profile-row label { min-width: 7rem; font-size: 0.85rem; color: #94a3b8; }
+.profile-row select {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  min-width: 12rem;
+}
+.profile-row .muted { font-size: 0.75rem; color: #64748b; }

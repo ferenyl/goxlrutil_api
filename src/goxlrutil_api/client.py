@@ -229,6 +229,42 @@ class GoXLRClient:
         await self.command(serial, GoXLRCommand.stop_sample_playback(bank, button))
 
     # ------------------------------------------------------------------
+    # Profiles
+    # ------------------------------------------------------------------
+
+    async def list_profiles(self, serial: str) -> list[str]:
+        """Return the list of available profile names."""
+        status = await self.get_status()
+        _ = status.mixers.get(serial)  # validate serial exists
+        return list(status.files.profiles)
+
+    async def get_current_profile(self, serial: str) -> str:
+        """Return the name of the currently loaded profile."""
+        status = await self.get_status()
+        mixer = status.mixers.get(serial)
+        return mixer.profile_name if mixer else ""
+
+    async def load_profile(self, serial: str, name: str) -> None:
+        """Load a profile by name. Pass ``persist=False`` to skip saving."""
+        await self.command(serial, GoXLRCommand.load_profile(name))
+
+    async def list_mic_profiles(self, serial: str) -> list[str]:
+        """Return the list of available mic profile names."""
+        status = await self.get_status()
+        _ = status.mixers.get(serial)
+        return list(status.files.mic_profiles)
+
+    async def get_current_mic_profile(self, serial: str) -> str:
+        """Return the name of the currently loaded mic profile."""
+        status = await self.get_status()
+        mixer = status.mixers.get(serial)
+        return mixer.mic_profile_name if mixer else ""
+
+    async def load_mic_profile(self, serial: str, name: str) -> None:
+        """Load a mic profile by name."""
+        await self.command(serial, GoXLRCommand.load_mic_profile(name))
+
+    # ------------------------------------------------------------------
     # Lighting / colour helpers
     # ------------------------------------------------------------------
 

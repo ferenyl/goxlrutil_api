@@ -141,6 +141,26 @@ async with GoXLRClient(transport) as client:
 
 ## Sending Commands
 
+### Profiles
+
+```python
+# List all available profiles
+profiles = await client.list_profiles(serial)
+print(profiles)  # ['Default', 'Streaming', 'Gaming', ...]
+
+# Get the currently loaded profile name
+current = await client.get_current_profile(serial)
+print(current)  # 'Streaming'
+
+# Load a profile (saves to daemon config by default)
+await client.load_profile(serial, "Gaming")
+
+# Mic profiles work the same way
+mic_profiles = await client.list_mic_profiles(serial)
+current_mic = await client.get_current_mic_profile(serial)
+await client.load_mic_profile(serial, "StudioMic")
+```
+
 ### Volume
 
 ```python

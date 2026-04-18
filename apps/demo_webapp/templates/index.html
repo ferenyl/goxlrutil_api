@@ -25,7 +25,18 @@
     {% for serial, mixer in status.mixers.items() %}
     <section class="mixer-card">
       <h2>{{ mixer.hardware.device_type.value }} – <code>{{ serial }}</code></h2>
-      <p class="profile">Profile: <strong>{{ mixer.profile_name }}</strong></p>
+
+      <!-- Profiles -->
+      <h3>Profiles</h3>
+      <div class="profile-section"
+           id="profiles-{{ serial }}"
+           hx-get="/partial/profiles/{{ serial }}"
+           hx-trigger="every 5s"
+           hx-swap="innerHTML">
+        {% with current_profile=mixer.profile_name, current_mic_profile=mixer.mic_profile_name %}
+        {% include "_profile_select.html" %}
+        {% endwith %}
+      </div>
 
       <!-- Faders -->
       <h3>Faders</h3>
@@ -223,6 +234,18 @@
       const bot = hexToRGB(document.getElementById(`fdr-bottom-${serial}`).value);
       fetch(`/api/colour/fader/${serial}/${fdr}/${top}/${bot}`, {method: 'POST'})
         .then(r => r.json()).then(d => flash(d.ok ? `Fader ${d.fader} → #${d.colour_top}/#${d.colour_bottom}` : d.detail, d.ok))
+        .catch(() => flash('Request failed', false));
+    }
+
+    function loadProfile(serial, name) {
+      fetch(`/api/profile/${serial}/${encodeURIComponent(name)}`, {method: 'POST'})
+        .then(r => r.json()).then(d => flash(d.ok ? `Profile → ${d.profile}` : d.detail, d.ok))
+        .catch(() => flash('Request failed', false));
+    }
+
+    function loadMicProfile(serial, name) {
+      fetch(`/api/mic-profile/${serial}/${encodeURIComponent(name)}`, {method: 'POST'})
+        .then(r => r.json()).then(d => flash(d.ok ? `Mic Profile → ${d.mic_profile}` : d.detail, d.ok))
         .catch(() => flash('Request failed', false));
     }
   </script>

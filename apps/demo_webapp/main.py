@@ -108,7 +108,8 @@ async def index(request: Request) -> HTMLResponse:
             "effect_presets": [p.value for p in EffectBankPresets],
             "sample_banks": [b.value for b in SampleBank],
             "sample_buttons": [b.value for b in SampleButtons],
-
+            "profiles": _status.files.profiles if _status else [],
+            "mic_profiles": _status.files.mic_profiles if _status else [],
         },
     )
 
@@ -311,6 +312,44 @@ async def partial_effects(request: Request, serial: str) -> HTMLResponse:
             "effect_presets": [p.value for p in EffectBankPresets],
         },
     )
+
+
+@app.get("/partial/profiles/{serial}", response_class=HTMLResponse)
+async def partial_profiles(request: Request, serial: str) -> HTMLResponse:
+    """Return the profile selector for one mixer – used for HTMX polling."""
+    _require_connected()
+    assert _client is not None
+    s = await _client.get_status()
+    mixer = s.mixers.get(serial)
+    return templates.TemplateResponse(
+        request,
+        "_profile_select.html",
+        {
+            "serial": serial,
+            "profiles": s.files.profiles,
+            "mic_profiles": s.files.mic_profiles,
+            "current_profile": mixer.profile_name if mixer else "",
+            "current_mic_profile": mixer.mic_profile_name if mixer else "",
+        },
+    )
+
+
+@app.post("/api/profile/{serial}/{name}")
+async def load_profile(serial: str, name: str) -> dict[str, Any]:
+    """Load a profile by name."""
+    _require_connected()
+    assert _client is not None
+    await _client.load_profile(serial, name)
+    return {"ok": True, "profile": name}
+
+
+@app.post("/api/mic-profile/{serial}/{name}")
+async def load_mic_profile(serial: str, name: str) -> dict[str, Any]:
+    """Load a mic profile by name."""
+    _require_connected()
+    assert _client is not None
+    await _client.load_mic_profile(serial, name)
+    return {"ok": True, "mic_profile": name}
 
 
 @app.post("/api/colour/global/{serial}/{colour}")

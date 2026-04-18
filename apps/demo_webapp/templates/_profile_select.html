@@ -1,0 +1,18 @@
+<div class="profile-row">
+  <label>Profile</label>
+  <select onchange="loadProfile('{{ serial }}', this.value)">
+    {% for p in profiles %}
+    <option value="{{ p }}" {% if p == current_profile %}selected{% endif %}>{{ p }}</option>
+    {% endfor %}
+  </select>
+  <span class="muted">(current: <strong>{{ current_profile }}</strong>)</span>
+</div>
+<div class="profile-row">
+  <label>Mic Profile</label>
+  <select onchange="loadMicProfile('{{ serial }}', this.value)">
+    {% for p in mic_profiles %}
+    <option value="{{ p }}" {% if p == current_mic_profile %}selected{% endif %}>{{ p }}</option>
+    {% endfor %}
+  </select>
+  <span class="muted">(current: <strong>{{ current_mic_profile }}</strong>)</span>
+</div>
