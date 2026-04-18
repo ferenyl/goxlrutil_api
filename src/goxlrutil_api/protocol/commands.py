@@ -8,10 +8,15 @@ from pathlib import Path
 from typing import Any
 
 from goxlrutil_api.protocol.types import (
+    AnimationMode,
     Button,
+    ButtonColourGroups,
+    ButtonColourOffStyle,
     ChannelName,
     EchoStyle,
     EffectBankPresets,
+    EncoderColourTargets,
+    FaderDisplayStyle,
     FaderName,
     GenderStyle,
     InputDevice,
@@ -23,7 +28,10 @@ from goxlrutil_api.protocol.types import (
     ReverbStyle,
     SampleBank,
     SampleButtons,
+    SamplerColourTargets,
+    SimpleColourTargets,
     VodMode,
+    WaterfallDirection,
 )
 
 
@@ -210,17 +218,97 @@ class GoXLRCommand:
     def set_button_colours(
         button: Button, colour_one: str, colour_two: str | None = None
     ) -> GoXLRCommand:
+        """Set the active/inactive LED colours for a single button."""
         return GoXLRCommand("SetButtonColours", [button, colour_one, colour_two])
+
+    @staticmethod
+    def set_button_off_style(
+        button: Button, off_style: ButtonColourOffStyle, colour_two: str
+    ) -> GoXLRCommand:
+        """Set how a button appears when it is in the 'off' state."""
+        return GoXLRCommand("SetButtonOffStyle", [button, off_style, colour_two])
+
+    @staticmethod
+    def set_button_group_colours(
+        group: ButtonColourGroups, colour_one: str, colour_two: str
+    ) -> GoXLRCommand:
+        """Set LED colours for all buttons in a named group simultaneously."""
+        return GoXLRCommand("SetButtonGroupColours", [group, colour_one, colour_two])
+
+    @staticmethod
+    def set_button_group_off_style(
+        group: ButtonColourGroups, off_style: ButtonColourOffStyle, colour_two: str
+    ) -> GoXLRCommand:
+        """Set the off-state style for all buttons in a named group."""
+        return GoXLRCommand("SetButtonGroupOffStyle", [group, off_style, colour_two])
 
     @staticmethod
     def set_fader_colours(
         fader: FaderName, colour_one: str, colour_two: str
     ) -> GoXLRCommand:
+        """Set the two LED colours for a fader channel strip."""
         return GoXLRCommand("SetFaderColours", [fader, colour_one, colour_two])
 
     @staticmethod
+    def set_fader_display_style(
+        fader: FaderName, style: FaderDisplayStyle
+    ) -> GoXLRCommand:
+        """Set the display style (gradient, meter, etc.) for a single fader."""
+        return GoXLRCommand("SetFaderDisplayStyle", [fader, style])
+
+    @staticmethod
+    def set_all_fader_display_style(style: FaderDisplayStyle) -> GoXLRCommand:
+        """Apply the same display style to all four faders at once."""
+        return GoXLRCommand("SetAllFaderDisplayStyle", style)
+
+    @staticmethod
     def set_global_colour(colour: str) -> GoXLRCommand:
+        """Set the global accent colour used by animations and unassigned LEDs."""
         return GoXLRCommand("SetGlobalColour", colour)
+
+    @staticmethod
+    def set_simple_colour(
+        target: SimpleColourTargets, colour: str
+    ) -> GoXLRCommand:
+        """Set the colour for a simple single-colour target (Global, Accent, ScribbleBack)."""
+        return GoXLRCommand("SetSimpleColour", [target, colour])
+
+    @staticmethod
+    def set_encoder_colour(
+        target: EncoderColourTargets,
+        colour_left: str,
+        colour_right: str,
+        colour_knob: str,
+    ) -> GoXLRCommand:
+        """Set the three LED zones of an encoder (left arc, right arc, knob)."""
+        return GoXLRCommand("SetEncoderColour", [target, colour_left, colour_right, colour_knob])
+
+    @staticmethod
+    def set_sampler_colour(
+        target: SamplerColourTargets,
+        colour_one: str,
+        colour_two: str,
+        colour_three: str,
+    ) -> GoXLRCommand:
+        """Set the three LED states for a sampler bank selector button."""
+        return GoXLRCommand("SetSamplerColour", [target, colour_one, colour_two, colour_three])
+
+    @staticmethod
+    def set_sampler_off_style(
+        target: SamplerColourTargets, off_style: ButtonColourOffStyle, colour_two: str
+    ) -> GoXLRCommand:
+        """Set the off-state style for a sampler bank selector button."""
+        return GoXLRCommand("SetSamplerOffStyle", [target, off_style, colour_two])
+
+    @staticmethod
+    def set_animation_mode(
+        mode: AnimationMode,
+        colour_one: str,
+        colour_two: str,
+        waterfall: WaterfallDirection,
+    ) -> GoXLRCommand:
+        """Set the global LED animation mode and parameters."""
+        return GoXLRCommand("SetAnimationMode", [mode, colour_one, colour_two, waterfall])
 
     # -- Mic / EQ ------------------------------------------------------------
 

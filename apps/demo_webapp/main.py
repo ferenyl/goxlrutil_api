@@ -25,11 +25,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from goxlrutil_api import GoXLRClient, UnixSocketTransport, WebSocketTransport
+from goxlrutil_api.colour import Colour
 from goxlrutil_api.events import ButtonEvent
 from goxlrutil_api.exceptions import GoXLRError
 from goxlrutil_api.protocol.commands import GoXLRCommand
 from goxlrutil_api.protocol.responses import DaemonStatus
-from goxlrutil_api.protocol.types import ChannelName, FaderName, MuteState
+from goxlrutil_api.protocol.types import (
+    Button,
+    ChannelName,
+    FaderName,
+    MuteState,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -202,6 +208,50 @@ async def partial_button_log(request: Request, serial: str) -> HTMLResponse:
         "_button_log.html",
         {"serial": serial, "events": events},
     )
+
+
+@app.post("/api/colour/global/{serial}/{colour}")
+async def set_global_colour(serial: str, colour: str) -> dict[str, Any]:
+    """Set the global accent colour (hex RRGGBB, no #)."""
+    _require_connected()
+    assert _client is not None
+    try:
+        c = Colour.from_hex(colour)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_global_colour(serial, c)
+    return {"ok": True, "colour": str(c)}
+
+
+@app.post("/api/colour/button/{serial}/{button}/{colour_on}")
+async def set_button_colour(serial: str, button: str, colour_on: str) -> dict[str, Any]:
+    """Set the active LED colour for a button (hex RRGGBB)."""
+    _require_connected()
+    assert _client is not None
+    try:
+        btn = Button(button)
+        c = Colour.from_hex(colour_on)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_button_colour(serial, btn, c)
+    return {"ok": True, "button": button, "colour": str(c)}
+
+
+@app.post("/api/colour/fader/{serial}/{fader}/{colour_top}/{colour_bottom}")
+async def set_fader_colour(
+    serial: str, fader: str, colour_top: str, colour_bottom: str
+) -> dict[str, Any]:
+    """Set the two LED colours for a fader strip."""
+    _require_connected()
+    assert _client is not None
+    try:
+        f = FaderName(fader)
+        ct = Colour.from_hex(colour_top)
+        cb = Colour.from_hex(colour_bottom)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_fader_colour(serial, f, ct, cb)
+    return {"ok": True, "fader": fader, "colour_top": str(ct), "colour_bottom": str(cb)}
 
 
 def _require_connected() -> None:

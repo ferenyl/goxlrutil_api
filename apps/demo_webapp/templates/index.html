@@ -85,6 +85,49 @@
         <p class="muted">No button events yet. Press a button on the GoXLR.</p>
       </div>
 
+      <!-- Lighting -->
+      <h3>Lighting</h3>
+      <div class="lighting-section">
+        <div class="lighting-group">
+          <label>Global accent colour</label>
+          <div class="colour-row">
+            <input type="color" id="global-colour-{{ serial }}" value="#FF8800"/>
+            <button onclick="setGlobalColour('{{ serial }}')">Apply</button>
+          </div>
+        </div>
+
+        <div class="lighting-group">
+          <label>Button colour</label>
+          <div class="colour-row">
+            <select id="btn-select-{{ serial }}">
+              {% for btn in ["Bleep","Cough","EffectFx","EffectMegaphone","EffectRobot","EffectHardTune",
+                             "EffectSelect1","EffectSelect2","EffectSelect3","EffectSelect4","EffectSelect5","EffectSelect6",
+                             "Fader1Mute","Fader2Mute","Fader3Mute","Fader4Mute",
+                             "SamplerSelectA","SamplerSelectB","SamplerSelectC",
+                             "SamplerTopLeft","SamplerTopRight","SamplerBottomLeft","SamplerBottomRight","SamplerClear"] %}
+              <option value="{{ btn }}">{{ btn }}</option>
+              {% endfor %}
+            </select>
+            <input type="color" id="btn-colour-{{ serial }}" value="#00AAFF"/>
+            <button onclick="setButtonColour('{{ serial }}')">Apply</button>
+          </div>
+        </div>
+
+        <div class="lighting-group">
+          <label>Fader colour</label>
+          <div class="colour-row">
+            <select id="fdr-select-{{ serial }}">
+              {% for f in ["A","B","C","D"] %}
+              <option value="{{ f }}">Fader {{ f }}</option>
+              {% endfor %}
+            </select>
+            <input type="color" id="fdr-top-{{ serial }}" value="#00FF88" title="Top"/>
+            <input type="color" id="fdr-bottom-{{ serial }}" value="#0044FF" title="Bottom"/>
+            <button onclick="setFaderColour('{{ serial }}')">Apply</button>
+          </div>
+        </div>
+      </div>
+
     </section>
     {% endfor %}
   {% endif %}
@@ -123,6 +166,43 @@
         if (key.startsWith(serial)) { e.detail.shouldSwap = false; return; }
       }
     });
+
+    // Lighting helpers
+    function hexToRGB(hex) {
+      return hex.replace('#', '').toUpperCase();
+    }
+
+    function flash(msg, ok) {
+      const el = document.getElementById('flash');
+      el.textContent = msg;
+      el.className = 'flash ' + (ok ? 'ok' : 'err');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.textContent = '', 3000);
+    }
+
+    function setGlobalColour(serial) {
+      const hex = hexToRGB(document.getElementById(`global-colour-${serial}`).value);
+      fetch(`/api/colour/global/${serial}/${hex}`, {method: 'POST'})
+        .then(r => r.json()).then(d => flash(d.ok ? `Global → #${d.colour}` : d.detail, d.ok))
+        .catch(() => flash('Request failed', false));
+    }
+
+    function setButtonColour(serial) {
+      const btn = document.getElementById(`btn-select-${serial}`).value;
+      const hex = hexToRGB(document.getElementById(`btn-colour-${serial}`).value);
+      fetch(`/api/colour/button/${serial}/${btn}/${hex}`, {method: 'POST'})
+        .then(r => r.json()).then(d => flash(d.ok ? `${d.button} → #${d.colour}` : d.detail, d.ok))
+        .catch(() => flash('Request failed', false));
+    }
+
+    function setFaderColour(serial) {
+      const fdr = document.getElementById(`fdr-select-${serial}`).value;
+      const top = hexToRGB(document.getElementById(`fdr-top-${serial}`).value);
+      const bot = hexToRGB(document.getElementById(`fdr-bottom-${serial}`).value);
+      fetch(`/api/colour/fader/${serial}/${fdr}/${top}/${bot}`, {method: 'POST'})
+        .then(r => r.json()).then(d => flash(d.ok ? `Fader ${d.fader} → #${d.colour_top}/#${d.colour_bottom}` : d.detail, d.ok))
+        .catch(() => flash('Request failed', false));
+    }
   </script>
 </body>
 </html>

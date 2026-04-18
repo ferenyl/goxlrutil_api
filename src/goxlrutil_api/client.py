@@ -7,11 +7,25 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from goxlrutil_api.colour import Colour, ColourLike, _as_hex
 from goxlrutil_api.events import ButtonEvent, ButtonEventType
 from goxlrutil_api.exceptions import CommandError
 from goxlrutil_api.protocol.commands import DaemonRequest, GoXLRCommand
 from goxlrutil_api.protocol.responses import DaemonResponse, DaemonStatus
-from goxlrutil_api.protocol.types import ChannelName, FaderName, MuteState
+from goxlrutil_api.protocol.types import (
+    AnimationMode,
+    Button,
+    ButtonColourGroups,
+    ButtonColourOffStyle,
+    ChannelName,
+    EncoderColourTargets,
+    FaderDisplayStyle,
+    FaderName,
+    MuteState,
+    SamplerColourTargets,
+    SimpleColourTargets,
+    WaterfallDirection,
+)
 from goxlrutil_api.state import DaemonState
 from goxlrutil_api.transport.base import Transport
 
@@ -119,6 +133,144 @@ class GoXLRClient:
 
     async def set_fx_enabled(self, serial: str, enabled: bool) -> None:
         await self.command(serial, GoXLRCommand.set_fx_enabled(enabled))
+
+    # ------------------------------------------------------------------
+    # Lighting / colour helpers
+    # ------------------------------------------------------------------
+
+    async def set_button_colour(
+        self,
+        serial: str,
+        button: Button,
+        colour_on: ColourLike,
+        colour_off: ColourLike | None = None,
+    ) -> None:
+        """Set the active (and optionally inactive) LED colour for a button.
+
+        ``colour_off`` defaults to a dimmed version of ``colour_on`` when
+        omitted.
+        """
+        on_hex = _as_hex(colour_on)
+        off_hex = (
+            _as_hex(colour_off) if colour_off is not None
+            else str(Colour.from_hex(on_hex).dimmed())
+        )
+        await self.command(serial, GoXLRCommand.set_button_colours(button, on_hex, off_hex))
+
+    async def set_button_off_style(
+        self,
+        serial: str,
+        button: Button,
+        off_style: ButtonColourOffStyle,
+        colour_two: ColourLike = Colour.BLACK,
+    ) -> None:
+        """Set how a button appears when it is in the 'off' state."""
+        await self.command(
+            serial,
+            GoXLRCommand.set_button_off_style(button, off_style, _as_hex(colour_two)),
+        )
+
+    async def set_button_group_colour(
+        self,
+        serial: str,
+        group: ButtonColourGroups,
+        colour_one: ColourLike,
+        colour_two: ColourLike,
+    ) -> None:
+        """Set LED colours for all buttons in a named group simultaneously."""
+        await self.command(
+            serial,
+            GoXLRCommand.set_button_group_colours(group, _as_hex(colour_one), _as_hex(colour_two)),
+        )
+
+    async def set_fader_colour(
+        self,
+        serial: str,
+        fader: FaderName,
+        colour_top: ColourLike,
+        colour_bottom: ColourLike,
+    ) -> None:
+        """Set the two LED colours for a fader channel strip."""
+        await self.command(
+            serial,
+            GoXLRCommand.set_fader_colours(fader, _as_hex(colour_top), _as_hex(colour_bottom)),
+        )
+
+    async def set_fader_display_style(
+        self,
+        serial: str,
+        fader: FaderName,
+        style: FaderDisplayStyle,
+    ) -> None:
+        """Set the display style (gradient, meter, etc.) for a fader."""
+        await self.command(serial, GoXLRCommand.set_fader_display_style(fader, style))
+
+    async def set_all_fader_display_style(
+        self, serial: str, style: FaderDisplayStyle
+    ) -> None:
+        """Apply the same display style to all four faders."""
+        await self.command(serial, GoXLRCommand.set_all_fader_display_style(style))
+
+    async def set_global_colour(self, serial: str, colour: ColourLike) -> None:
+        """Set the global accent colour used by animations and unassigned LEDs."""
+        await self.command(serial, GoXLRCommand.set_global_colour(_as_hex(colour)))
+
+    async def set_simple_colour(
+        self, serial: str, target: SimpleColourTargets, colour: ColourLike
+    ) -> None:
+        """Set the colour for a simple single-colour target (Global, Accent, ScribbleBack)."""
+        await self.command(serial, GoXLRCommand.set_simple_colour(target, _as_hex(colour)))
+
+    async def set_encoder_colour(
+        self,
+        serial: str,
+        target: EncoderColourTargets,
+        colour_left: ColourLike,
+        colour_right: ColourLike,
+        colour_knob: ColourLike,
+    ) -> None:
+        """Set the three LED zones of an encoder (left arc, right arc, knob)."""
+        await self.command(
+            serial,
+            GoXLRCommand.set_encoder_colour(
+                target, _as_hex(colour_left), _as_hex(colour_right), _as_hex(colour_knob)
+            ),
+        )
+
+    async def set_sampler_colour(
+        self,
+        serial: str,
+        target: SamplerColourTargets,
+        colour_one: ColourLike,
+        colour_two: ColourLike,
+        colour_three: ColourLike,
+    ) -> None:
+        """Set the three LED states for a sampler bank selector button."""
+        await self.command(
+            serial,
+            GoXLRCommand.set_sampler_colour(
+                target,
+                _as_hex(colour_one),
+                _as_hex(colour_two),
+                _as_hex(colour_three),
+            ),
+        )
+
+    async def set_animation_mode(
+        self,
+        serial: str,
+        mode: AnimationMode,
+        colour_one: ColourLike = Colour.BLACK,
+        colour_two: ColourLike = Colour.BLACK,
+        waterfall: WaterfallDirection = WaterfallDirection.Down,
+    ) -> None:
+        """Set the global LED animation mode and parameters."""
+        await self.command(
+            serial,
+            GoXLRCommand.set_animation_mode(
+                mode, _as_hex(colour_one), _as_hex(colour_two), waterfall
+            ),
+        )
 
     # ------------------------------------------------------------------
     # State access

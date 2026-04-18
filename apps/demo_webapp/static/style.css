@@ -139,3 +139,64 @@ button {
 .btn-event--long_pressed .btn-type { color: #c084fc; }
 .btn-held  { color: #facc15; }
 .muted { color: #666; font-size: 0.85rem; padding: 0.25rem; }
+
+/* Lighting section */
+.lighting-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+}
+.lighting-group {
+  background: #0f2040;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  min-width: 260px;
+}
+.lighting-group label {
+  display: block;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.colour-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.colour-row input[type="color"] {
+  width: 2.4rem;
+  height: 2rem;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+}
+.colour-row select {
+  background: #1a2e4a;
+  color: #e0e0e0;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.82rem;
+  max-width: 160px;
+}
+.colour-row button {
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+.colour-row button:hover { background: #1d4ed8; }
+
+/* Flash feedback */
+.flash { min-height: 1.5rem; font-size: 0.85rem; padding: 0.3rem 0; margin-top: 0.5rem; }
+.flash.ok  { color: #4ade80; }
+.flash.err { color: #f87171; }
