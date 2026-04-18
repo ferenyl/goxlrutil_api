@@ -36,7 +36,7 @@ class ButtonEvent:
     held_seconds: float = 0.0
 
     @staticmethod
-    def _from_raw(
+    def from_raw(
         serial: str,
         btn_name: str,
         event_type: ButtonEventType,

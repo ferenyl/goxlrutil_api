@@ -99,7 +99,7 @@ or ``#RRGGBB``).
 """
 
 
-def _as_hex(c: ColourLike) -> str:
+def as_hex(c: ColourLike) -> str:
     """Normalise a :data:`ColourLike` to a 6-char uppercase hex string."""
     if isinstance(c, Colour):
         return str(c)

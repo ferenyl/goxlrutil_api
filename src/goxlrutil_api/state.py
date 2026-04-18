@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
-import jsonpatch
+import jsonpatch  # type: ignore[import-untyped]
 
-from goxlrutil_api.protocol.responses import DaemonStatus, _parse_status
+from goxlrutil_api.protocol.responses import DaemonStatus, parse_status
 
 _log = logging.getLogger(__name__)
 
@@ -41,12 +41,13 @@ class DaemonState:
             return
         try:
             patch = jsonpatch.JsonPatch(ops)
-            self._raw = patch.apply(self._raw)
-            self._status = _parse_status(self._raw)
+            result = cast(dict[str, Any], patch.apply(self._raw))  # type: ignore[no-untyped-call]
+            self._raw = result
+            self._status = parse_status(self._raw)
         except Exception as exc:
             _log.warning("Failed to apply patch: %s", exc)
 
     def set_raw(self, raw: dict[str, Any]) -> None:
         """Store the raw status dict (called after a GetStatus response)."""
         self._raw = raw
-        self._status = _parse_status(raw)
+        self._status = parse_status(raw)

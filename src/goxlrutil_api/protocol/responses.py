@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from goxlrutil_api.protocol.types import (
     AnimationMode,
@@ -115,15 +115,15 @@ class Submix:
 
 @dataclass
 class Submixes:
-    inputs: dict[str, Submix] = field(default_factory=dict)
-    outputs: dict[str, str] = field(default_factory=dict)
+    inputs: dict[str, Submix] = field(default_factory=dict[str, Submix])
+    outputs: dict[str, str] = field(default_factory=dict[str, str])
 
 
 @dataclass
 class Levels:
     submix_supported: bool = False
     output_monitor: OutputDevice = OutputDevice.Headphones
-    volumes: dict[str, int] = field(default_factory=dict)
+    volumes: dict[str, int] = field(default_factory=dict[str, int])
     submix: Submixes | None = None
     bleep: int = 0
     deess: int = 0
@@ -135,14 +135,14 @@ class Levels:
 
 @dataclass
 class Equaliser:
-    gain: dict[str, int] = field(default_factory=dict)
-    frequency: dict[str, float] = field(default_factory=dict)
+    gain: dict[str, int] = field(default_factory=dict[str, int])
+    frequency: dict[str, float] = field(default_factory=dict[str, float])
 
 
 @dataclass
 class EqualiserMini:
-    gain: dict[str, int] = field(default_factory=dict)
-    frequency: dict[str, float] = field(default_factory=dict)
+    gain: dict[str, int] = field(default_factory=dict[str, int])
+    frequency: dict[str, float] = field(default_factory=dict[str, float])
 
 
 @dataclass
@@ -166,7 +166,7 @@ class Compressor:
 @dataclass
 class MicSettings:
     mic_type: MicrophoneType = MicrophoneType.Dynamic
-    mic_gains: dict[str, int] = field(default_factory=dict)
+    mic_gains: dict[str, int] = field(default_factory=dict[str, int])
     equaliser: Equaliser = field(default_factory=Equaliser)
     equaliser_mini: EqualiserMini = field(default_factory=EqualiserMini)
     noise_gate: NoiseGate = field(default_factory=NoiseGate)
@@ -225,11 +225,11 @@ class AnimationLighting:
 @dataclass
 class Lighting:
     animation: AnimationLighting = field(default_factory=AnimationLighting)
-    faders: dict[str, FaderLighting] = field(default_factory=dict)
-    buttons: dict[str, ButtonLighting] = field(default_factory=dict)
-    simple: dict[str, OneColour] = field(default_factory=dict)
-    sampler: dict[str, SamplerLighting] = field(default_factory=dict)
-    encoders: dict[str, ThreeColours] = field(default_factory=dict)
+    faders: dict[str, FaderLighting] = field(default_factory=dict[str, FaderLighting])
+    buttons: dict[str, ButtonLighting] = field(default_factory=dict[str, ButtonLighting])
+    simple: dict[str, OneColour] = field(default_factory=dict[str, OneColour])
+    sampler: dict[str, SamplerLighting] = field(default_factory=dict[str, SamplerLighting])
+    encoders: dict[str, ThreeColours] = field(default_factory=dict[str, ThreeColours])
 
 
 # ---------------------------------------------------------------------------
@@ -335,7 +335,7 @@ class ActiveEffects:
 class Effects:
     is_enabled: bool = False
     active_preset: EffectBankPresets = EffectBankPresets.Preset1
-    preset_names: dict[str, str] = field(default_factory=dict)
+    preset_names: dict[str, str] = field(default_factory=dict[str, str])
     current: ActiveEffects = field(default_factory=ActiveEffects)
 
 
@@ -354,7 +354,7 @@ class Sample:
 class SamplerButton:
     function: SamplePlaybackMode = SamplePlaybackMode.PlayNext
     order: SamplePlayOrder = SamplePlayOrder.Sequential
-    samples: list[Sample] = field(default_factory=list)
+    samples: list[Sample] = field(default_factory=list[Sample])
     is_playing: bool = False
     is_recording: bool = False
 
@@ -371,7 +371,9 @@ class Sampler:
     active_bank: SampleBank = SampleBank.A
     clear_active: bool = False
     record_buffer: int = 0
-    banks: dict[str, dict[str, SamplerButton]] = field(default_factory=dict)
+    banks: dict[str, dict[str, SamplerButton]] = field(
+        default_factory=dict[str, dict[str, SamplerButton]]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -405,19 +407,19 @@ class Settings:
 @dataclass
 class MixerStatus:
     hardware: HardwareStatus = field(default_factory=HardwareStatus)
-    shutdown_commands: list[Any] = field(default_factory=list)
-    sleep_commands: list[Any] = field(default_factory=list)
-    wake_commands: list[Any] = field(default_factory=list)
-    fader_status: dict[str, FaderStatus] = field(default_factory=dict)
+    shutdown_commands: list[Any] = field(default_factory=list[Any])
+    sleep_commands: list[Any] = field(default_factory=list[Any])
+    wake_commands: list[Any] = field(default_factory=list[Any])
+    fader_status: dict[str, FaderStatus] = field(default_factory=dict[str, FaderStatus])
     mic_status: MicSettings = field(default_factory=MicSettings)
     levels: Levels = field(default_factory=Levels)
-    router: dict[str, dict[str, bool]] = field(default_factory=dict)
+    router: dict[str, dict[str, bool]] = field(default_factory=dict[str, dict[str, bool]])
     cough_button: CoughButton = field(default_factory=CoughButton)
     lighting: Lighting = field(default_factory=Lighting)
     effects: Effects | None = None
     sampler: Sampler | None = None
     settings: Settings = field(default_factory=Settings)
-    button_down: dict[str, bool] = field(default_factory=dict)
+    button_down: dict[str, bool] = field(default_factory=dict[str, bool])
     profile_name: str = ""
     mic_profile_name: str = ""
 
@@ -465,18 +467,18 @@ class SampleFile:
 
 @dataclass
 class Files:
-    profiles: list[str] = field(default_factory=list)
-    mic_profiles: list[str] = field(default_factory=list)
-    presets: list[str] = field(default_factory=list)
-    samples: dict[str, SampleFile] = field(default_factory=dict)
-    icons: list[str] = field(default_factory=list)
+    profiles: list[str] = field(default_factory=list[str])
+    mic_profiles: list[str] = field(default_factory=list[str])
+    presets: list[str] = field(default_factory=list[str])
+    samples: dict[str, SampleFile] = field(default_factory=dict[str, SampleFile])
+    icons: list[str] = field(default_factory=list[str])
 
 
 @dataclass
 class DaemonStatus:
     config: DaemonConfig = field(default_factory=DaemonConfig)
-    firmware: dict[str, Any] = field(default_factory=dict)
-    mixers: dict[str, MixerStatus] = field(default_factory=dict)
+    firmware: dict[str, Any] = field(default_factory=dict[str, Any])
+    mixers: dict[str, MixerStatus] = field(default_factory=dict[str, MixerStatus])
     paths: Paths = field(default_factory=Paths)
     files: Files = field(default_factory=Files)
 
@@ -498,18 +500,20 @@ class DaemonResponse:
 
     @staticmethod
     def from_dict(data: object) -> DaemonResponse:
-        if data == "Ok":
+        d_any: Any = data
+        if d_any == "Ok":
             return DaemonResponse(ok=True)
-        if isinstance(data, dict):
-            if "Error" in data:
-                return DaemonResponse(error=data["Error"])
-            if "Status" in data:
-                raw = data["Status"]
-                return DaemonResponse(status=_parse_status(raw), raw_status=raw)
-            if "Patch" in data:
-                return DaemonResponse(patch=data["Patch"])
-            if "MicLevel" in data:
-                return DaemonResponse(mic_level=float(data["MicLevel"]))
+        if isinstance(d_any, dict):
+            d: dict[str, Any] = cast(dict[str, Any], d_any)
+            if "Error" in d:
+                return DaemonResponse(error=str(d["Error"]))
+            if "Status" in d:
+                raw: dict[str, Any] = cast(dict[str, Any], d["Status"])
+                return DaemonResponse(status=parse_status(raw), raw_status=raw)
+            if "Patch" in d:
+                return DaemonResponse(patch=list(cast(list[Any], d["Patch"])))
+            if "MicLevel" in d:
+                return DaemonResponse(mic_level=float(d["MicLevel"]))
         return DaemonResponse(error=f"Unknown response: {data!r}")
 
 
@@ -517,7 +521,7 @@ class DaemonResponse:
 # Parsing helpers
 # ---------------------------------------------------------------------------
 
-def _parse_status(raw: dict[str, Any]) -> DaemonStatus:
+def parse_status(raw: dict[str, Any]) -> DaemonStatus:
     status = DaemonStatus()
     if "config" in raw:
         cfg = raw["config"]

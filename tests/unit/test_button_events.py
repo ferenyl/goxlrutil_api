@@ -13,7 +13,6 @@ from goxlrutil_api.protocol.commands import DaemonRequest
 from goxlrutil_api.protocol.responses import DaemonResponse
 from goxlrutil_api.transport.base import PatchCallback, Transport
 
-
 # ---------------------------------------------------------------------------
 # Minimal stub transport
 # ---------------------------------------------------------------------------

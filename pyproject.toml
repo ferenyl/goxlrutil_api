@@ -60,7 +60,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ANN"]
-ignore = ["ANN101", "ANN102"]
+ignore = []
 
 [tool.pyright]
 pythonVersion = "3.14"
@@ -68,6 +68,9 @@ venvPath = "."
 venv = ".venv"
 include = ["src", "apps", "tests"]
 strict = ["src/goxlrutil_api"]
+# dataclass fields with unparameterised default_factory (e.g. field(default_factory=dict))
+# produce dict[Unknown, Unknown] at class scope even when annotated – suppress the noise.
+reportUnknownVariableType = "none"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -7,7 +7,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from goxlrutil_api.colour import Colour, ColourLike, _as_hex
+from goxlrutil_api.colour import Colour, ColourLike, as_hex
 from goxlrutil_api.events import ButtonEvent, ButtonEventType
 from goxlrutil_api.exceptions import CommandError
 from goxlrutil_api.protocol.commands import DaemonRequest, GoXLRCommand
@@ -244,9 +244,9 @@ class GoXLRClient:
         ``colour_off`` defaults to a dimmed version of ``colour_on`` when
         omitted.
         """
-        on_hex = _as_hex(colour_on)
+        on_hex = as_hex(colour_on)
         off_hex = (
-            _as_hex(colour_off) if colour_off is not None
+            as_hex(colour_off) if colour_off is not None
             else str(Colour.from_hex(on_hex).dimmed())
         )
         await self.command(serial, GoXLRCommand.set_button_colours(button, on_hex, off_hex))
@@ -261,7 +261,7 @@ class GoXLRClient:
         """Set how a button appears when it is in the 'off' state."""
         await self.command(
             serial,
-            GoXLRCommand.set_button_off_style(button, off_style, _as_hex(colour_two)),
+            GoXLRCommand.set_button_off_style(button, off_style, as_hex(colour_two)),
         )
 
     async def set_button_group_colour(
@@ -274,7 +274,7 @@ class GoXLRClient:
         """Set LED colours for all buttons in a named group simultaneously."""
         await self.command(
             serial,
-            GoXLRCommand.set_button_group_colours(group, _as_hex(colour_one), _as_hex(colour_two)),
+            GoXLRCommand.set_button_group_colours(group, as_hex(colour_one), as_hex(colour_two)),
         )
 
     async def set_fader_colour(
@@ -287,7 +287,7 @@ class GoXLRClient:
         """Set the two LED colours for a fader channel strip."""
         await self.command(
             serial,
-            GoXLRCommand.set_fader_colours(fader, _as_hex(colour_top), _as_hex(colour_bottom)),
+            GoXLRCommand.set_fader_colours(fader, as_hex(colour_top), as_hex(colour_bottom)),
         )
 
     async def set_fader_display_style(
@@ -307,13 +307,13 @@ class GoXLRClient:
 
     async def set_global_colour(self, serial: str, colour: ColourLike) -> None:
         """Set the global accent colour used by animations and unassigned LEDs."""
-        await self.command(serial, GoXLRCommand.set_global_colour(_as_hex(colour)))
+        await self.command(serial, GoXLRCommand.set_global_colour(as_hex(colour)))
 
     async def set_simple_colour(
         self, serial: str, target: SimpleColourTargets, colour: ColourLike
     ) -> None:
         """Set the colour for a simple single-colour target (Global, Accent, ScribbleBack)."""
-        await self.command(serial, GoXLRCommand.set_simple_colour(target, _as_hex(colour)))
+        await self.command(serial, GoXLRCommand.set_simple_colour(target, as_hex(colour)))
 
     async def set_encoder_colour(
         self,
@@ -327,7 +327,7 @@ class GoXLRClient:
         await self.command(
             serial,
             GoXLRCommand.set_encoder_colour(
-                target, _as_hex(colour_left), _as_hex(colour_right), _as_hex(colour_knob)
+                target, as_hex(colour_left), as_hex(colour_right), as_hex(colour_knob)
             ),
         )
 
@@ -344,9 +344,9 @@ class GoXLRClient:
             serial,
             GoXLRCommand.set_sampler_colour(
                 target,
-                _as_hex(colour_one),
-                _as_hex(colour_two),
-                _as_hex(colour_three),
+                as_hex(colour_one),
+                as_hex(colour_two),
+                as_hex(colour_three),
             ),
         )
 
@@ -362,7 +362,7 @@ class GoXLRClient:
         await self.command(
             serial,
             GoXLRCommand.set_animation_mode(
-                mode, _as_hex(colour_one), _as_hex(colour_two), waterfall
+                mode, as_hex(colour_one), as_hex(colour_two), waterfall
             ),
         )
 
@@ -457,7 +457,7 @@ class GoXLRClient:
     ) -> None:
         if self._on_button_event_cb is None:
             return
-        event = ButtonEvent._from_raw(serial, btn_name, event_type, held_seconds)
+        event = ButtonEvent.from_raw(serial, btn_name, event_type, held_seconds)
         try:
             await self._on_button_event_cb(event)
         except Exception as exc:

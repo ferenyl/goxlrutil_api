@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from goxlrutil_api.protocol.types import (
     AnimationMode,
@@ -48,9 +48,9 @@ def _to_json(obj: Any) -> Any:  # noqa: ANN401
     if isinstance(obj, Path):
         return str(obj)
     if isinstance(obj, list):
-        return [_to_json(v) for v in obj]
+        return [_to_json(v) for v in cast(list[Any], obj)]
     if isinstance(obj, tuple):
-        return [_to_json(v) for v in obj]
+        return [_to_json(v) for v in cast(tuple[Any, ...], obj)]
     if hasattr(obj, "value"):  # Enum
         return obj.value
     if hasattr(obj, "__dict__"):
@@ -67,7 +67,7 @@ class DaemonCommand:
     """Commands targeting the daemon itself (not a specific mixer)."""
 
     _variant: str
-    _args: dict[str, Any] = field(default_factory=dict)
+    _args: dict[str, Any] = field(default_factory=dict[str, Any])
 
     def to_dict(self) -> dict[str, Any]:
         if self._args:
