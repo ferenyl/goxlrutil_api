@@ -113,7 +113,7 @@
       <div class="router-section"
            id="router-{{ serial }}"
            hx-get="/partial/router/{{ serial }}"
-           hx-trigger="load"
+           hx-trigger="load, every 5s"
            hx-swap="innerHTML">
         <p class="dim">Loading…</p>
       </div>
@@ -573,6 +573,11 @@
       if (!e.detail.target) return;
       const target = e.detail.target;
 
+      // Only suppress automatic polling swaps — never block user-triggered swaps
+      // (user-triggered targets won't have hx-trigger="every ..." on the target element)
+      const trigger = target.getAttribute?.('hx-trigger') ?? '';
+      if (!trigger.startsWith('every')) return;
+
       // Don't swap any polled section while the user has focus on an input/select inside it
       if (target.querySelector(':focus')) {
         e.detail.shouldSwap = false;
@@ -580,9 +585,8 @@
       }
 
       // Also don't swap volume rows while a slider is actively being dragged
-      const volumesDiv = target.closest?.('[id^="volumes-"]') || target;
-      if (!volumesDiv.id?.startsWith('volumes-')) return;
-      const serial = volumesDiv.id.replace('volumes-', '');
+      if (!target.id?.startsWith('volumes-')) return;
+      const serial = target.id.replace('volumes-', '');
       for (const key of _activeSliders) {
         if (key.startsWith(serial)) { e.detail.shouldSwap = false; return; }
       }
