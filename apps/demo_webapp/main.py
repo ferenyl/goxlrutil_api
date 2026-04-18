@@ -33,17 +33,29 @@ from goxlrutil_api.protocol.responses import DaemonStatus
 from goxlrutil_api.protocol.types import (
     Button,
     ChannelName,
+    CompressorAttackTime,
+    CompressorRatio,
+    CompressorReleaseTime,
     EchoStyle,
     EffectBankPresets,
+    EqFrequencies,
     FaderName,
+    GateTimes,
     GenderStyle,
+    HardTuneSource,
+    HardTuneStyle,
     InputDevice,
+    MegaphoneStyle,
     MicrophoneType,
+    MiniEqFrequencies,
+    Mix,
     MuteFunction,
     MuteState,
     OutputDevice,
     PitchStyle,
     ReverbStyle,
+    RobotRange,
+    RobotStyle,
     SampleBank,
     SampleButtons,
     VodMode,
@@ -119,6 +131,20 @@ async def index(request: Request) -> HTMLResponse:
             "sample_buttons": [b.value for b in SampleButtons],
             "profiles": _status.files.profiles if _status else [],
             "mic_profiles": _status.files.mic_profiles if _status else [],
+            "eq_freqs": [f.value for f in EqFrequencies],
+            "mini_eq_freqs": [f.value for f in MiniEqFrequencies],
+            "gate_times": [t.value for t in GateTimes],
+            "compressor_ratios": [r.value for r in CompressorRatio],
+            "compressor_attacks": [a.value for a in CompressorAttackTime],
+            "compressor_releases": [r.value for r in CompressorReleaseTime],
+            "megaphone_styles": [s.value for s in MegaphoneStyle],
+            "robot_styles": [s.value for s in RobotStyle],
+            "robot_ranges": [r.value for r in RobotRange],
+            "hardtune_styles": [s.value for s in HardTuneStyle],
+            "hardtune_sources": [s.value for s in HardTuneSource],
+            "mute_functions": [f.value for f in MuteFunction],
+            "mix_values": [m.value for m in Mix],
+            "output_devices": [o.value for o in OutputDevice],
         },
     )
 
@@ -728,3 +754,397 @@ async def set_monitor_mix(serial: str, output: str) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     await _client.set_monitor_mix(serial, out)
     return {"ok": True, "output": output}
+
+
+# ---------------------------------------------------------------------------
+# EQ
+# ---------------------------------------------------------------------------
+
+@app.post("/api/mic/{serial}/eq/{freq}/gain/{gain}")
+async def set_eq_gain(serial: str, freq: str, gain: int, mini: bool = False) -> dict[str, Any]:
+    """Set EQ band gain (full or mini EQ)."""
+    _require_connected()
+    assert _client is not None
+    if mini:
+        try:
+            mf = MiniEqFrequencies(freq)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        await _client.set_eq_mini_gain(serial, mf, gain)
+    else:
+        try:
+            ef = EqFrequencies(freq)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        await _client.set_eq_gain(serial, ef, gain)
+    return {"ok": True, "freq": freq, "gain": gain}
+
+
+@app.post("/api/mic/{serial}/eq/{freq}/freq-value/{value}")
+async def set_eq_freq(
+    serial: str, freq: str, value: float, mini: bool = False
+) -> dict[str, Any]:
+    """Set EQ band center frequency (full or mini EQ)."""
+    _require_connected()
+    assert _client is not None
+    if mini:
+        try:
+            mf = MiniEqFrequencies(freq)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        await _client.set_eq_mini_freq(serial, mf, value)
+    else:
+        try:
+            ef = EqFrequencies(freq)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        await _client.set_eq_freq(serial, ef, value)
+    return {"ok": True, "freq": freq, "value": value}
+
+
+# ---------------------------------------------------------------------------
+# Compressor / De-esser / Gate detail / Mic gain
+# ---------------------------------------------------------------------------
+
+@app.post("/api/mic/{serial}/compressor/threshold/{threshold}")
+async def set_compressor_threshold(serial: str, threshold: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_compressor_threshold(serial, threshold)
+    return {"ok": True, "threshold": threshold}
+
+
+@app.post("/api/mic/{serial}/compressor/ratio/{ratio}")
+async def set_compressor_ratio(serial: str, ratio: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        r = CompressorRatio(ratio)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_compressor_ratio(serial, r)
+    return {"ok": True, "ratio": ratio}
+
+
+@app.post("/api/mic/{serial}/compressor/attack/{attack}")
+async def set_compressor_attack(serial: str, attack: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        a = CompressorAttackTime(attack)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_compressor_attack(serial, a)
+    return {"ok": True, "attack": attack}
+
+
+@app.post("/api/mic/{serial}/compressor/release/{release}")
+async def set_compressor_release(serial: str, release: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        r = CompressorReleaseTime(release)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_compressor_release(serial, r)
+    return {"ok": True, "release": release}
+
+
+@app.post("/api/mic/{serial}/compressor/makeup/{gain}")
+async def set_compressor_makeup_gain(serial: str, gain: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_compressor_makeup_gain(serial, gain)
+    return {"ok": True, "gain": gain}
+
+
+@app.post("/api/mic/{serial}/deeser/{amount}")
+async def set_deeser(serial: str, amount: int) -> dict[str, Any]:
+    """Set the de-esser amount (0–100)."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_deeser(serial, amount)
+    return {"ok": True, "amount": amount}
+
+
+@app.post("/api/mic/{serial}/gate/attenuation/{attenuation}")
+async def set_gate_attenuation(serial: str, attenuation: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_gate_attenuation(serial, attenuation)
+    return {"ok": True, "attenuation": attenuation}
+
+
+@app.post("/api/mic/{serial}/gate/attack/{attack}")
+async def set_gate_attack(serial: str, attack: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        a = GateTimes(attack)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_gate_attack(serial, a)
+    return {"ok": True, "attack": attack}
+
+
+@app.post("/api/mic/{serial}/gate/release/{release}")
+async def set_gate_release(serial: str, release: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        r = GateTimes(release)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_gate_release(serial, r)
+    return {"ok": True, "release": release}
+
+
+@app.post("/api/mic/{serial}/gain/{mic_type}/{gain}")
+async def set_microphone_gain(serial: str, mic_type: str, gain: int) -> dict[str, Any]:
+    """Set microphone hardware gain (0–72 dB)."""
+    _require_connected()
+    assert _client is not None
+    try:
+        mt = MicrophoneType(mic_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_microphone_gain(serial, mt, gain)
+    return {"ok": True, "mic_type": mic_type, "gain": gain}
+
+
+# ---------------------------------------------------------------------------
+# Scribble strips
+# ---------------------------------------------------------------------------
+
+@app.post("/api/scribble/{serial}/{fader}/text/{text}")
+async def set_scribble_text(serial: str, fader: str, text: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        f = FaderName(fader)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_scribble_text(serial, f, text)
+    return {"ok": True, "fader": fader, "text": text}
+
+
+@app.post("/api/scribble/{serial}/{fader}/number/{number}")
+async def set_scribble_number(serial: str, fader: str, number: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        f = FaderName(fader)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_scribble_number(serial, f, number)
+    return {"ok": True, "fader": fader, "number": number}
+
+
+@app.post("/api/scribble/{serial}/{fader}/invert/{invert}")
+async def set_scribble_invert(serial: str, fader: str, invert: bool) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        f = FaderName(fader)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_scribble_invert(serial, f, invert)
+    return {"ok": True, "fader": fader, "invert": invert}
+
+
+# ---------------------------------------------------------------------------
+# Megaphone detail
+# ---------------------------------------------------------------------------
+
+@app.post("/api/effects/{serial}/megaphone/style/{style}")
+async def set_megaphone_style(serial: str, style: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = MegaphoneStyle(style)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_megaphone_style(serial, s)
+    return {"ok": True, "style": style}
+
+
+@app.post("/api/effects/{serial}/megaphone/amount/{amount}")
+async def set_megaphone_amount(serial: str, amount: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_megaphone_amount(serial, amount)
+    return {"ok": True, "amount": amount}
+
+
+@app.post("/api/effects/{serial}/megaphone/post-gain/{gain}")
+async def set_megaphone_post_gain(serial: str, gain: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_megaphone_post_gain(serial, gain)
+    return {"ok": True, "gain": gain}
+
+
+# ---------------------------------------------------------------------------
+# Robot detail
+# ---------------------------------------------------------------------------
+
+@app.post("/api/effects/{serial}/robot/style/{style}")
+async def set_robot_style(serial: str, style: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = RobotStyle(style)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_robot_style(serial, s)
+    return {"ok": True, "style": style}
+
+
+@app.post("/api/effects/{serial}/robot/{range_}/gain/{gain}")
+async def set_robot_gain(serial: str, range_: str, gain: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        r = RobotRange(range_)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_robot_gain(serial, r, gain)
+    return {"ok": True, "range": range_, "gain": gain}
+
+
+@app.post("/api/effects/{serial}/robot/{range_}/freq/{freq}")
+async def set_robot_freq(serial: str, range_: str, freq: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        r = RobotRange(range_)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_robot_freq(serial, r, freq)
+    return {"ok": True, "range": range_, "freq": freq}
+
+
+@app.post("/api/effects/{serial}/robot/{range_}/width/{width}")
+async def set_robot_width(serial: str, range_: str, width: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        r = RobotRange(range_)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_robot_width(serial, r, width)
+    return {"ok": True, "range": range_, "width": width}
+
+
+# ---------------------------------------------------------------------------
+# HardTune detail
+# ---------------------------------------------------------------------------
+
+@app.post("/api/effects/{serial}/hardtune/style/{style}")
+async def set_hard_tune_style(serial: str, style: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = HardTuneStyle(style)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_hard_tune_style(serial, s)
+    return {"ok": True, "style": style}
+
+
+@app.post("/api/effects/{serial}/hardtune/amount/{amount}")
+async def set_hard_tune_amount(serial: str, amount: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_hard_tune_amount(serial, amount)
+    return {"ok": True, "amount": amount}
+
+
+@app.post("/api/effects/{serial}/hardtune/rate/{rate}")
+async def set_hard_tune_rate(serial: str, rate: int) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    await _client.set_hard_tune_rate(serial, rate)
+    return {"ok": True, "rate": rate}
+
+
+@app.post("/api/effects/{serial}/hardtune/source/{source}")
+async def set_hard_tune_source(serial: str, source: str) -> dict[str, Any]:
+    _require_connected()
+    assert _client is not None
+    try:
+        s = HardTuneSource(source)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_hard_tune_source(serial, s)
+    return {"ok": True, "source": source}
+
+
+# ---------------------------------------------------------------------------
+# Submix extras
+# ---------------------------------------------------------------------------
+
+@app.post("/api/submix/{serial}/linked/{channel}/{linked}")
+async def set_submix_linked(serial: str, channel: str, linked: bool) -> dict[str, Any]:
+    """Link a channel's submix B to its main volume."""
+    _require_connected()
+    assert _client is not None
+    try:
+        ch = ChannelName(channel)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_submix_linked(serial, ch, linked)
+    return {"ok": True, "channel": channel, "linked": linked}
+
+
+@app.post("/api/submix/{serial}/output-mix/{output}/{mix}")
+async def set_submix_output_mix(serial: str, output: str, mix: str) -> dict[str, Any]:
+    """Set which mix (A or B) is sent to an output."""
+    _require_connected()
+    assert _client is not None
+    try:
+        out = OutputDevice(output)
+        m = Mix(mix)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_submix_output_mix(serial, out, m)
+    return {"ok": True, "output": output, "mix": mix}
+
+
+# ---------------------------------------------------------------------------
+# Cough config
+# ---------------------------------------------------------------------------
+
+@app.post("/api/cough/{serial}/mute-function/{mute}")
+async def set_cough_mute_function(serial: str, mute: str) -> dict[str, Any]:
+    """Set the mute function for the cough button."""
+    _require_connected()
+    assert _client is not None
+    try:
+        mf = MuteFunction(mute)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    await _client.set_cough_mute_function(serial, mf)
+    return {"ok": True, "mute": mute}
+
+
+@app.post("/api/cough/{serial}/hold/{hold}")
+async def set_cough_is_hold(serial: str, hold: bool) -> dict[str, Any]:
+    """Set whether cough button acts as hold (True) or toggle (False)."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_cough_is_hold(serial, hold)
+    return {"ok": True, "hold": hold}
+
+
+# ---------------------------------------------------------------------------
+# Misc
+# ---------------------------------------------------------------------------
+
+@app.post("/api/misc/{serial}/lock-faders/{locked}")
+async def set_lock_faders(serial: str, locked: bool) -> dict[str, Any]:
+    """Lock or unlock all faders."""
+    _require_connected()
+    assert _client is not None
+    await _client.set_lock_faders(serial, locked)
+    return {"ok": True, "locked": locked}

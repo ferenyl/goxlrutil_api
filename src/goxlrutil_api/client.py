@@ -18,21 +18,37 @@ from goxlrutil_api.protocol.types import (
     ButtonColourGroups,
     ButtonColourOffStyle,
     ChannelName,
+    CompressorAttackTime,
+    CompressorRatio,
+    CompressorReleaseTime,
+    DisplayMode,
+    DisplayModeComponents,
     EchoStyle,
     EffectBankPresets,
     EncoderColourTargets,
+    EqFrequencies,
     FaderDisplayStyle,
     FaderName,
+    GateTimes,
     GenderStyle,
+    HardTuneSource,
+    HardTuneStyle,
     InputDevice,
+    MegaphoneStyle,
     MicrophoneType,
+    MiniEqFrequencies,
+    Mix,
     MuteFunction,
     MuteState,
     OutputDevice,
     PitchStyle,
     ReverbStyle,
+    RobotRange,
+    RobotStyle,
     SampleBank,
     SampleButtons,
+    SamplePlaybackMode,
+    SamplePlayOrder,
     SamplerColourTargets,
     SimpleColourTargets,
     VodMode,
@@ -225,6 +241,17 @@ class GoXLRClient:
         """Enable or disable the Megaphone voice effect."""
         await self.command(serial, GoXLRCommand.set_megaphone_enabled(enabled))
 
+    async def set_megaphone_style(self, serial: str, style: MegaphoneStyle) -> None:
+        await self.command(serial, GoXLRCommand.set_megaphone_style(style))
+
+    async def set_megaphone_amount(self, serial: str, amount: int) -> None:
+        """Set megaphone amount (0–100)."""
+        await self.command(serial, GoXLRCommand.set_megaphone_amount(amount))
+
+    async def set_megaphone_post_gain(self, serial: str, gain: int) -> None:
+        """Set megaphone post gain (-20..20 dB)."""
+        await self.command(serial, GoXLRCommand.set_megaphone_post_gain(gain))
+
     async def toggle_megaphone(self, serial: str) -> bool:
         """Toggle Megaphone on/off. Reads fresh state, returns the new enabled state."""
         status = await self.get_status()
@@ -242,6 +269,30 @@ class GoXLRClient:
         """Enable or disable the Robot voice effect."""
         await self.command(serial, GoXLRCommand.set_robot_enabled(enabled))
 
+    async def set_robot_style(self, serial: str, style: RobotStyle) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_style(style))
+
+    async def set_robot_gain(self, serial: str, range_: RobotRange, gain: int) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_gain(range_, gain))
+
+    async def set_robot_freq(self, serial: str, range_: RobotRange, freq: int) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_freq(range_, freq))
+
+    async def set_robot_width(self, serial: str, range_: RobotRange, width: int) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_width(range_, width))
+
+    async def set_robot_waveform(self, serial: str, waveform: int) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_waveform(waveform))
+
+    async def set_robot_pulse_width(self, serial: str, width: int) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_pulse_width(width))
+
+    async def set_robot_threshold(self, serial: str, threshold: int) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_threshold(threshold))
+
+    async def set_robot_dry_mix(self, serial: str, mix: int) -> None:
+        await self.command(serial, GoXLRCommand.set_robot_dry_mix(mix))
+
     async def toggle_robot(self, serial: str) -> bool:
         """Toggle Robot on/off. Reads fresh state, returns the new enabled state."""
         status = await self.get_status()
@@ -258,6 +309,21 @@ class GoXLRClient:
     async def set_hard_tune_enabled(self, serial: str, enabled: bool) -> None:
         """Enable or disable the Hard Tune voice effect."""
         await self.command(serial, GoXLRCommand.set_hard_tune_enabled(enabled))
+
+    async def set_hard_tune_style(self, serial: str, style: HardTuneStyle) -> None:
+        await self.command(serial, GoXLRCommand.set_hard_tune_style(style))
+
+    async def set_hard_tune_amount(self, serial: str, amount: int) -> None:
+        await self.command(serial, GoXLRCommand.set_hard_tune_amount(amount))
+
+    async def set_hard_tune_rate(self, serial: str, rate: int) -> None:
+        await self.command(serial, GoXLRCommand.set_hard_tune_rate(rate))
+
+    async def set_hard_tune_window(self, serial: str, window: int) -> None:
+        await self.command(serial, GoXLRCommand.set_hard_tune_window(window))
+
+    async def set_hard_tune_source(self, serial: str, source: HardTuneSource) -> None:
+        await self.command(serial, GoXLRCommand.set_hard_tune_source(source))
 
     async def toggle_hard_tune(self, serial: str) -> bool:
         """Toggle Hard Tune on/off. Reads fresh state, returns the new enabled state."""
@@ -287,6 +353,46 @@ class GoXLRClient:
     ) -> None:
         """Stop playback for the given bank+button slot."""
         await self.command(serial, GoXLRCommand.stop_sample_playback(bank, button))
+
+    async def set_sampler_function(
+        self, serial: str, bank: SampleBank, button: SampleButtons, mode: SamplePlaybackMode
+    ) -> None:
+        await self.command(serial, GoXLRCommand.set_sampler_function(bank, button, mode))
+
+    async def set_sampler_order(
+        self, serial: str, bank: SampleBank, button: SampleButtons, order: SamplePlayOrder
+    ) -> None:
+        await self.command(serial, GoXLRCommand.set_sampler_order(bank, button, order))
+
+    async def add_sample(
+        self, serial: str, bank: SampleBank, button: SampleButtons, path: str
+    ) -> None:
+        await self.command(serial, GoXLRCommand.add_sample(bank, button, path))
+
+    async def remove_sample_by_index(
+        self, serial: str, bank: SampleBank, button: SampleButtons, index: int
+    ) -> None:
+        await self.command(serial, GoXLRCommand.remove_sample_by_index(bank, button, index))
+
+    async def set_sample_start_percent(
+        self, serial: str, bank: SampleBank, button: SampleButtons, index: int, percent: float
+    ) -> None:
+        await self.command(
+            serial, GoXLRCommand.set_sample_start_percent(bank, button, index, percent)
+        )
+
+    async def set_sample_stop_percent(
+        self, serial: str, bank: SampleBank, button: SampleButtons, index: int, percent: float
+    ) -> None:
+        await self.command(
+            serial, GoXLRCommand.set_sample_stop_percent(bank, button, index, percent)
+        )
+
+    async def set_sampler_fade_duration(self, serial: str, ms: int) -> None:
+        await self.command(serial, GoXLRCommand.set_sampler_fade_duration(ms))
+
+    async def set_sampler_reset_on_clear(self, serial: str, reset: bool) -> None:
+        await self.command(serial, GoXLRCommand.set_sampler_reset_on_clear(reset))
 
     # ------------------------------------------------------------------
     # Profiles
@@ -328,6 +434,26 @@ class GoXLRClient:
         """Save the current settings to the active profile."""
         await self.command(serial, GoXLRCommand.save_profile())
 
+    async def save_profile_as(self, serial: str, name: str) -> None:
+        """Save the current settings as a new profile."""
+        await self.command(serial, GoXLRCommand.save_profile_as(name))
+
+    async def save_mic_profile(self, serial: str) -> None:
+        """Save the current mic settings to the active mic profile."""
+        await self.command(serial, GoXLRCommand.save_mic_profile())
+
+    async def save_mic_profile_as(self, serial: str, name: str) -> None:
+        """Save the current mic settings as a new mic profile."""
+        await self.command(serial, GoXLRCommand.save_mic_profile_as(name))
+
+    async def load_profile_colours(self, serial: str, name: str) -> None:
+        """Load only the colour settings from a profile."""
+        await self.command(serial, GoXLRCommand.load_profile_colours(name))
+
+    async def rename_active_preset(self, serial: str, name: str) -> None:
+        """Rename the currently active effect preset."""
+        await self.command(serial, GoXLRCommand.rename_active_preset(name))
+
     # ------------------------------------------------------------------
     # Routing matrix
     # ------------------------------------------------------------------
@@ -356,6 +482,14 @@ class GoXLRClient:
         """Set the mute state of the Cough button."""
         await self.command(serial, GoXLRCommand.set_cough_mute_state(state))
 
+    async def set_cough_mute_function(self, serial: str, mute: MuteFunction) -> None:
+        """Set the mute function for the cough button."""
+        await self.command(serial, GoXLRCommand.set_cough_mute_function(mute))
+
+    async def set_cough_is_hold(self, serial: str, hold: bool) -> None:
+        """Set whether the cough button acts as hold (True) or toggle (False)."""
+        await self.command(serial, GoXLRCommand.set_cough_is_hold(hold))
+
     # ------------------------------------------------------------------
     # Effect parameters
     # ------------------------------------------------------------------
@@ -368,6 +502,36 @@ class GoXLRClient:
         """Set the reverb send amount (0–100)."""
         await self.command(serial, GoXLRCommand.set_reverb_amount(amount))
 
+    async def set_reverb_decay(self, serial: str, ms: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_decay(ms))
+
+    async def set_reverb_early_level(self, serial: str, level: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_early_level(level))
+
+    async def set_reverb_tail_level(self, serial: str, level: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_tail_level(level))
+
+    async def set_reverb_pre_delay(self, serial: str, ms: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_pre_delay(ms))
+
+    async def set_reverb_low_colour(self, serial: str, colour: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_low_colour(colour))
+
+    async def set_reverb_high_colour(self, serial: str, colour: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_high_colour(colour))
+
+    async def set_reverb_high_factor(self, serial: str, factor: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_high_factor(factor))
+
+    async def set_reverb_diffuse(self, serial: str, diffuse: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_diffuse(diffuse))
+
+    async def set_reverb_mod_speed(self, serial: str, speed: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_mod_speed(speed))
+
+    async def set_reverb_mod_depth(self, serial: str, depth: int) -> None:
+        await self.command(serial, GoXLRCommand.set_reverb_mod_depth(depth))
+
     async def set_echo_style(self, serial: str, style: EchoStyle) -> None:
         """Set the echo effect style."""
         await self.command(serial, GoXLRCommand.set_echo_style(style))
@@ -376,6 +540,30 @@ class GoXLRClient:
         """Set the echo send amount (0–100)."""
         await self.command(serial, GoXLRCommand.set_echo_amount(amount))
 
+    async def set_echo_feedback(self, serial: str, feedback: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_feedback(feedback))
+
+    async def set_echo_tempo(self, serial: str, bpm: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_tempo(bpm))
+
+    async def set_echo_delay_left(self, serial: str, ms: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_delay_left(ms))
+
+    async def set_echo_delay_right(self, serial: str, ms: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_delay_right(ms))
+
+    async def set_echo_feedback_left(self, serial: str, feedback: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_feedback_left(feedback))
+
+    async def set_echo_feedback_right(self, serial: str, feedback: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_feedback_right(feedback))
+
+    async def set_echo_xfb_l_to_r(self, serial: str, feedback: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_xfb_l_to_r(feedback))
+
+    async def set_echo_xfb_r_to_l(self, serial: str, feedback: int) -> None:
+        await self.command(serial, GoXLRCommand.set_echo_xfb_r_to_l(feedback))
+
     async def set_pitch_style(self, serial: str, style: PitchStyle) -> None:
         """Set the pitch shift style."""
         await self.command(serial, GoXLRCommand.set_pitch_style(style))
@@ -383,6 +571,10 @@ class GoXLRClient:
     async def set_pitch_amount(self, serial: str, amount: int) -> None:
         """Set the pitch shift amount (-24–24 semitones)."""
         await self.command(serial, GoXLRCommand.set_pitch_amount(amount))
+
+    async def set_pitch_character(self, serial: str, character: int) -> None:
+        """Set pitch character (0–100)."""
+        await self.command(serial, GoXLRCommand.set_pitch_character(character))
 
     async def set_gender_style(self, serial: str, style: GenderStyle) -> None:
         """Set the gender shift style."""
@@ -407,6 +599,74 @@ class GoXLRClient:
     async def set_gate_active(self, serial: str, active: bool) -> None:
         """Enable or disable the noise gate."""
         await self.command(serial, GoXLRCommand.set_gate_active(active))
+
+    async def set_gate_attenuation(self, serial: str, attenuation: int) -> None:
+        await self.command(serial, GoXLRCommand.set_gate_attenuation(attenuation))
+
+    async def set_gate_attack(self, serial: str, attack: GateTimes) -> None:
+        await self.command(serial, GoXLRCommand.set_gate_attack(attack))
+
+    async def set_gate_release(self, serial: str, release: GateTimes) -> None:
+        await self.command(serial, GoXLRCommand.set_gate_release(release))
+
+    async def set_microphone_gain(self, serial: str, mic_type: MicrophoneType, gain: int) -> None:
+        """Set the microphone gain (0–72 dB)."""
+        await self.command(serial, GoXLRCommand.set_microphone_gain(mic_type, gain))
+
+    # ------------------------------------------------------------------
+    # EQ
+    # ------------------------------------------------------------------
+
+    async def set_eq_gain(self, serial: str, freq: EqFrequencies, gain: int) -> None:
+        await self.command(serial, GoXLRCommand.set_eq_gain(freq, gain))
+
+    async def set_eq_freq(self, serial: str, freq: EqFrequencies, value: float) -> None:
+        await self.command(serial, GoXLRCommand.set_eq_freq(freq, value))
+
+    async def set_eq_mini_gain(self, serial: str, freq: MiniEqFrequencies, gain: int) -> None:
+        await self.command(serial, GoXLRCommand.set_eq_mini_gain(freq, gain))
+
+    async def set_eq_mini_freq(self, serial: str, freq: MiniEqFrequencies, value: float) -> None:
+        await self.command(serial, GoXLRCommand.set_eq_mini_freq(freq, value))
+
+    # ------------------------------------------------------------------
+    # Compressor
+    # ------------------------------------------------------------------
+
+    async def set_compressor_threshold(self, serial: str, threshold: int) -> None:
+        await self.command(serial, GoXLRCommand.set_compressor_threshold(threshold))
+
+    async def set_compressor_ratio(self, serial: str, ratio: CompressorRatio) -> None:
+        await self.command(serial, GoXLRCommand.set_compressor_ratio(ratio))
+
+    async def set_compressor_attack(self, serial: str, attack: CompressorAttackTime) -> None:
+        await self.command(serial, GoXLRCommand.set_compressor_attack(attack))
+
+    async def set_compressor_release(self, serial: str, release: CompressorReleaseTime) -> None:
+        await self.command(serial, GoXLRCommand.set_compressor_release(release))
+
+    async def set_compressor_makeup_gain(self, serial: str, gain: int) -> None:
+        await self.command(serial, GoXLRCommand.set_compressor_makeup_gain(gain))
+
+    async def set_deeser(self, serial: str, amount: int) -> None:
+        """Set the de-esser amount (0–100)."""
+        await self.command(serial, GoXLRCommand.set_deeser(amount))
+
+    # ------------------------------------------------------------------
+    # Scribble strips
+    # ------------------------------------------------------------------
+
+    async def set_scribble_text(self, serial: str, fader: FaderName, text: str) -> None:
+        await self.command(serial, GoXLRCommand.set_scribble_text(fader, text))
+
+    async def set_scribble_icon(self, serial: str, fader: FaderName, icon: str | None) -> None:
+        await self.command(serial, GoXLRCommand.set_scribble_icon(fader, icon))
+
+    async def set_scribble_number(self, serial: str, fader: FaderName, number: str) -> None:
+        await self.command(serial, GoXLRCommand.set_scribble_number(fader, number))
+
+    async def set_scribble_invert(self, serial: str, fader: FaderName, invert: bool) -> None:
+        await self.command(serial, GoXLRCommand.set_scribble_invert(fader, invert))
 
     # ------------------------------------------------------------------
     # Mix & monitor
@@ -455,6 +715,14 @@ class GoXLRClient:
     async def set_monitor_mix(self, serial: str, output: OutputDevice) -> None:
         """Set which output is used as the headphone monitor mix source."""
         await self.command(serial, GoXLRCommand.set_monitor_mix(output))
+
+    async def set_submix_linked(self, serial: str, channel: ChannelName, linked: bool) -> None:
+        """Link a channel's submix B volume to its main volume."""
+        await self.command(serial, GoXLRCommand.set_submix_linked(channel, linked))
+
+    async def set_submix_output_mix(self, serial: str, output: OutputDevice, mix: Mix) -> None:
+        """Set which mix (A or B) is sent to an output device."""
+        await self.command(serial, GoXLRCommand.set_submix_output_mix(output, mix))
 
     async def set_button_colour(
         self,
@@ -588,6 +856,37 @@ class GoXLRClient:
             GoXLRCommand.set_animation_mode(
                 mode, as_hex(colour_one), as_hex(colour_two), waterfall
             ),
+        )
+
+    # ------------------------------------------------------------------
+    # Misc
+    # ------------------------------------------------------------------
+
+    async def set_lock_faders(self, serial: str, locked: bool) -> None:
+        """Lock or unlock all faders."""
+        await self.command(serial, GoXLRCommand.set_lock_faders(locked))
+
+    async def set_vc_mute_also_mute_cm(self, serial: str, enabled: bool) -> None:
+        """When enabled, muting VC also mutes the CM channel."""
+        await self.command(serial, GoXLRCommand.set_vc_mute_also_mute_cm(enabled))
+
+    async def set_mute_hold_duration(self, serial: str, ms: int) -> None:
+        """Set the mute hold duration (ms)."""
+        await self.command(serial, GoXLRCommand.set_mute_hold_duration(ms))
+
+    async def set_element_display_mode(
+        self, serial: str, component: DisplayModeComponents, mode: DisplayMode
+    ) -> None:
+        """Set the display mode for a UI component."""
+        await self.command(serial, GoXLRCommand.set_element_display_mode(component, mode))
+
+    async def set_all_fader_colours(
+        self, serial: str, colour_one: ColourLike, colour_two: ColourLike
+    ) -> None:
+        """Set the two LED colours for all four fader strips simultaneously."""
+        await self.command(
+            serial,
+            GoXLRCommand.set_all_fader_colours(as_hex(colour_one), as_hex(colour_two)),
         )
 
     # ------------------------------------------------------------------

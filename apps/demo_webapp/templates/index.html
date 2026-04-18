@@ -243,6 +243,304 @@
         </div>
       </div>
 
+      <!-- EQ -->
+      <h3>EQ (Full)</h3>
+      <div class="eq-section">
+        <table class="eq-table">
+          <tr><th>Band</th><th>Gain (-9..9)</th></tr>
+          {% for freq in eq_freqs %}
+          <tr>
+            <td>{{ freq }}</td>
+            <td>
+              <input type="number" min="-9" max="9" value="0" style="width:60px"
+                     onchange="post('/api/mic/{{ serial }}/eq/{{ freq }}/gain/' + this.value)">
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <h3>EQ (Mini)</h3>
+      <div class="eq-section">
+        <table class="eq-table">
+          <tr><th>Band</th><th>Gain (-9..9)</th></tr>
+          {% for freq in mini_eq_freqs %}
+          <tr>
+            <td>{{ freq }}</td>
+            <td>
+              <input type="number" min="-9" max="9" value="0" style="width:60px"
+                     onchange="post('/api/mic/{{ serial }}/eq/{{ freq }}/gain/' + this.value + '?mini=true')">
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <!-- Compressor -->
+      <h3>Compressor</h3>
+      <div class="compressor-section">
+        <div class="mix-row">
+          <label>Threshold (-40..0 dB)
+            <input type="range" min="-40" max="0" value="-20"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/mic/{{ serial }}/compressor/threshold/' + this.value)">
+            <span>-20</span>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Makeup Gain (0..24 dB)
+            <input type="range" min="0" max="24" value="0"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/mic/{{ serial }}/compressor/makeup/' + this.value)">
+            <span>0</span>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Ratio
+            <select onchange="post('/api/mic/{{ serial }}/compressor/ratio/' + this.value)">
+              {% for r in compressor_ratios %}
+              <option value="{{ r }}">{{ r }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Attack
+            <select onchange="post('/api/mic/{{ serial }}/compressor/attack/' + this.value)">
+              {% for a in compressor_attacks %}
+              <option value="{{ a }}">{{ a }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Release
+            <select onchange="post('/api/mic/{{ serial }}/compressor/release/' + this.value)">
+              {% for r in compressor_releases %}
+              <option value="{{ r }}">{{ r }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- De-esser -->
+      <h3>De-esser</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Amount (0–100)
+            <input type="range" min="0" max="100" value="0"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/mic/{{ serial }}/deeser/' + this.value)">
+            <span>0</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Gate Details -->
+      <h3>Gate Details</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Attenuation (0–100%)
+            <input type="range" min="0" max="100" value="0"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/mic/{{ serial }}/gate/attenuation/' + this.value)">
+            <span>0</span>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Attack Time
+            <select onchange="post('/api/mic/{{ serial }}/gate/attack/' + this.value)">
+              {% for t in gate_times %}
+              <option value="{{ t }}">{{ t }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Release Time
+            <select onchange="post('/api/mic/{{ serial }}/gate/release/' + this.value)">
+              {% for t in gate_times %}
+              <option value="{{ t }}">{{ t }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- Mic Gain -->
+      <h3>Mic Gain</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Gain (0–72 dB)
+            <input type="number" min="0" max="72" value="36" style="width:70px"
+                   onchange="post('/api/mic/{{ serial }}/gain/{{ mixer.mic_status.mic_type.value if mixer.mic_status else 'Dynamic' }}/' + this.value)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Scribble Strips -->
+      <h3>Scribble Strips</h3>
+      <div class="scribble-section">
+        {% for fdr in ["A","B","C","D"] %}
+        <div class="scribble-row">
+          <span>Fader {{ fdr }}</span>
+          <input type="text" placeholder="Text" maxlength="8" style="width:80px"
+                 onchange="post('/api/scribble/{{ serial }}/{{ fdr }}/text/' + encodeURIComponent(this.value))">
+          <input type="text" placeholder="Num" maxlength="4" style="width:50px"
+                 onchange="post('/api/scribble/{{ serial }}/{{ fdr }}/number/' + encodeURIComponent(this.value))">
+          <label>Invert
+            <input type="checkbox"
+                   onchange="post('/api/scribble/{{ serial }}/{{ fdr }}/invert/' + this.checked)">
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Megaphone Details -->
+      <h3>Megaphone Details</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Style
+            <select onchange="post('/api/effects/{{ serial }}/megaphone/style/' + this.value)">
+              {% for s in megaphone_styles %}
+              <option value="{{ s }}">{{ s }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Amount (0–100)
+            <input type="range" min="0" max="100" value="50"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/effects/{{ serial }}/megaphone/amount/' + this.value)">
+            <span>50</span>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Post Gain (-20..20 dB)
+            <input type="range" min="-20" max="20" value="0"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/effects/{{ serial }}/megaphone/post-gain/' + this.value)">
+            <span>0</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Robot Details -->
+      <h3>Robot Details</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Style
+            <select onchange="post('/api/effects/{{ serial }}/robot/style/' + this.value)">
+              {% for s in robot_styles %}
+              <option value="{{ s }}">{{ s }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        {% for rng in robot_ranges %}
+        <div class="mix-row">
+          <span>{{ rng }}:</span>
+          <label>Gain
+            <input type="number" min="-12" max="12" value="0" style="width:55px"
+                   onchange="post('/api/effects/{{ serial }}/robot/{{ rng }}/gain/' + this.value)">
+          </label>
+          <label>Freq
+            <input type="number" min="0" max="2000" value="200" style="width:70px"
+                   onchange="post('/api/effects/{{ serial }}/robot/{{ rng }}/freq/' + this.value)">
+          </label>
+          <label>Width
+            <input type="number" min="0" max="100" value="50" style="width:55px"
+                   onchange="post('/api/effects/{{ serial }}/robot/{{ rng }}/width/' + this.value)">
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- HardTune Details -->
+      <h3>HardTune Details</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Style
+            <select onchange="post('/api/effects/{{ serial }}/hardtune/style/' + this.value)">
+              {% for s in hardtune_styles %}
+              <option value="{{ s }}">{{ s }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Amount (0–100)
+            <input type="range" min="0" max="100" value="100"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/effects/{{ serial }}/hardtune/amount/' + this.value)">
+            <span>100</span>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Rate (0–100)
+            <input type="range" min="0" max="100" value="50"
+                   oninput="this.nextElementSibling.textContent=this.value"
+                   onchange="post('/api/effects/{{ serial }}/hardtune/rate/' + this.value)">
+            <span>50</span>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Source
+            <select onchange="post('/api/effects/{{ serial }}/hardtune/source/' + this.value)">
+              {% for s in hardtune_sources %}
+              <option value="{{ s }}">{{ s }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- Submix Extras -->
+      <h3>Submix Extras</h3>
+      <div class="mix-section">
+        {% for ch in channel_names %}
+        <div class="mix-row">
+          <label>{{ ch }} linked
+            <input type="checkbox"
+                   onchange="post('/api/submix/{{ serial }}/linked/{{ ch }}/' + this.checked)">
+          </label>
+        </div>
+        {% endfor %}
+        {% for out in output_devices %}
+        <div class="mix-row">
+          <label>{{ out }} → Mix
+            <select onchange="post('/api/submix/{{ serial }}/output-mix/{{ out }}/' + this.value)">
+              {% for m in mix_values %}
+              <option value="{{ m }}">{{ m }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Cough Config -->
+      <h3>Cough Config</h3>
+      <div class="mix-section">
+        <div class="mix-row">
+          <label>Mute Function
+            <select onchange="post('/api/cough/{{ serial }}/mute-function/' + this.value)">
+              {% for mf in mute_functions %}
+              <option value="{{ mf }}">{{ mf }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="mix-row">
+          <label>Hold mode
+            <input type="checkbox"
+                   onchange="post('/api/cough/{{ serial }}/hold/' + this.checked)">
+          </label>
+        </div>
+      </div>
+
     </section>
     {% endfor %}
   {% endif %}

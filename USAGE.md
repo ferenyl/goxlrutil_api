@@ -21,14 +21,21 @@ A comprehensive reference for humans and AI agents integrating with the library.
 13. [Fader Assignment & Routing](#fader-assignment--routing)
 14. [Effect Parameters](#effect-parameters)
 15. [Mic Settings](#mic-settings)
-16. [Mix, Monitor & Submix](#mix-monitor--submix)
-17. [Profiles](#profiles)
-18. [Error Handling](#error-handling)
-19. [Synchronous Wrapper](#synchronous-wrapper)
-20. [Full Integration Example](#full-integration-example)
-21. [Protocol Notes](#protocol-notes)
-22. [Logging](#logging)
-23. [Importing Callback and State Types](#importing-callback-and-state-types)
+16. [EQ](#eq)
+17. [Compressor](#compressor)
+18. [De-esser](#de-esser)
+19. [Scribble Strips](#scribble-strips)
+20. [Mix, Monitor & Submix](#mix-monitor--submix)
+21. [Cough Button](#cough-button)
+22. [Profiles](#profiles)
+23. [Sampler Management](#sampler-management)
+24. [Misc Settings](#misc-settings)
+25. [Error Handling](#error-handling)
+26. [Synchronous Wrapper](#synchronous-wrapper)
+27. [Full Integration Example](#full-integration-example)
+28. [Protocol Notes](#protocol-notes)
+29. [Logging](#logging)
+30. [Importing Callback and State Types](#importing-callback-and-state-types)
 
 ---
 
@@ -800,6 +807,84 @@ await client.set_gender_style(serial, GenderStyle.Medium)
 await client.set_gender_amount(serial, 6)
 ```
 
+### Reverb fine parameters
+
+```python
+await client.set_reverb_decay(serial, 800)         # ms
+await client.set_reverb_early_level(serial, -6)    # dB
+await client.set_reverb_tail_level(serial, -10)    # dB
+await client.set_reverb_pre_delay(serial, 20)      # ms
+await client.set_reverb_low_colour(serial, 50)
+await client.set_reverb_high_colour(serial, 50)
+await client.set_reverb_high_factor(serial, 50)
+await client.set_reverb_diffuse(serial, 75)
+await client.set_reverb_mod_speed(serial, 40)
+await client.set_reverb_mod_depth(serial, 20)
+```
+
+### Echo fine parameters
+
+```python
+await client.set_echo_feedback(serial, 50)          # 0–100
+await client.set_echo_tempo(serial, 120)            # BPM
+await client.set_echo_delay_left(serial, 300)       # ms
+await client.set_echo_delay_right(serial, 300)      # ms
+await client.set_echo_feedback_left(serial, 50)     # 0–100
+await client.set_echo_feedback_right(serial, 50)    # 0–100
+await client.set_echo_xfb_l_to_r(serial, 0)        # 0–100
+await client.set_echo_xfb_r_to_l(serial, 0)        # 0–100
+```
+
+### Pitch character
+
+```python
+await client.set_pitch_character(serial, 50)        # 0–100
+```
+
+### Megaphone details
+
+```python
+from goxlrutil_api.protocol.types import MegaphoneStyle
+
+# MegaphoneStyle: Megaphone, Radio, OnThePhone, Overdrive, BuzzCutt, Tweed
+await client.set_megaphone_style(serial, MegaphoneStyle.Radio)
+await client.set_megaphone_amount(serial, 75)       # 0–100
+await client.set_megaphone_post_gain(serial, 3)     # -20..20 dB
+```
+
+### Robot details
+
+```python
+from goxlrutil_api.protocol.types import RobotStyle, RobotRange
+
+# RobotStyle: Robot1, Robot2, Robot3
+await client.set_robot_style(serial, RobotStyle.Robot1)
+
+# RobotRange: Low, Medium, High
+await client.set_robot_gain(serial, RobotRange.Low, 0)
+await client.set_robot_freq(serial, RobotRange.Low, 80)
+await client.set_robot_width(serial, RobotRange.Low, 45)
+await client.set_robot_waveform(serial, 0)          # 0–5
+await client.set_robot_pulse_width(serial, 50)      # 0–100
+await client.set_robot_threshold(serial, -36)
+await client.set_robot_dry_mix(serial, 0)
+```
+
+### HardTune details
+
+```python
+from goxlrutil_api.protocol.types import HardTuneStyle, HardTuneSource
+
+# HardTuneStyle: Natural, Medium, Hard
+await client.set_hard_tune_style(serial, HardTuneStyle.Hard)
+await client.set_hard_tune_amount(serial, 100)      # 0–100
+await client.set_hard_tune_rate(serial, 50)         # 0–100
+await client.set_hard_tune_window(serial, 20)       # ms
+
+# HardTuneSource: All, Music, Game, LineIn, System
+await client.set_hard_tune_source(serial, HardTuneSource.Music)
+```
+
 Read current values from state:
 
 ```python
@@ -820,11 +905,21 @@ from goxlrutil_api.protocol.types import MicrophoneType
 # MicrophoneType: Dynamic, Condenser, Jack
 await client.set_microphone_type(serial, MicrophoneType.Condenser)
 
+# Set hardware gain (0–72 dB; only applies to the active mic type)
+await client.set_microphone_gain(serial, MicrophoneType.Condenser, 36)
+
 # Enable/disable the noise gate
 await client.set_gate_active(serial, True)
 
 # Set the noise gate threshold (-59–0 dB; lower = more aggressive)
 await client.set_gate_threshold(serial, -20)
+
+# Gate detail parameters
+from goxlrutil_api.protocol.types import GateTimes
+
+await client.set_gate_attenuation(serial, 100)                # 0–100 %
+await client.set_gate_attack(serial, GateTimes.Attack10ms)
+await client.set_gate_release(serial, GateTimes.Attack100ms)
 ```
 
 Read mic settings from state:
@@ -838,7 +933,89 @@ print(mic.noise_gate.threshold)           # int (dB)
 
 ---
 
-## Mix, Monitor & Submix
+## EQ
+
+The GoXLR Full has a 10-band parametric EQ; the GoXLR Mini has a 6-band EQ.
+
+### Full EQ (10-band)
+
+```python
+from goxlrutil_api.protocol.types import EqFrequencies
+
+# EqFrequencies: Equalizer31Hz, Equalizer63Hz, Equalizer125Hz, Equalizer250Hz,
+#                Equalizer500Hz, Equalizer1KHz, Equalizer2KHz, Equalizer4KHz,
+#                Equalizer8KHz, Equalizer16KHz
+
+# Set gain for a band (-9..9 dB)
+await client.set_eq_gain(serial, EqFrequencies.Equalizer1KHz, 3)
+
+# Adjust the band center frequency
+await client.set_eq_freq(serial, EqFrequencies.Equalizer1KHz, 1100.0)
+```
+
+### Mini EQ (6-band)
+
+```python
+from goxlrutil_api.protocol.types import MiniEqFrequencies
+
+# MiniEqFrequencies: Equalizer90Hz, Equalizer250Hz, Equalizer500Hz,
+#                    Equalizer1KHz, Equalizer3KHz, Equalizer8KHz
+
+await client.set_eq_mini_gain(serial, MiniEqFrequencies.Equalizer1KHz, -2)
+await client.set_eq_mini_freq(serial, MiniEqFrequencies.Equalizer1KHz, 950.0)
+```
+
+---
+
+## Compressor
+
+```python
+from goxlrutil_api.protocol.types import (
+    CompressorRatio, CompressorAttackTime, CompressorReleaseTime
+)
+
+await client.set_compressor_threshold(serial, -20)              # -40..0 dB
+await client.set_compressor_ratio(serial, CompressorRatio.Ratio4to1)
+await client.set_compressor_attack(serial, CompressorAttackTime.Attack10ms)
+await client.set_compressor_release(serial, CompressorReleaseTime.Release100ms)
+await client.set_compressor_makeup_gain(serial, 6)              # 0..24 dB
+```
+
+**CompressorRatio values:** `Ratio1to1`, `Ratio1_1to1`, `Ratio1_2to1`, `Ratio1_4to1`, `Ratio1_6to1`,
+`Ratio1_8to1`, `Ratio2to1`, `Ratio2_5to1`, `Ratio3to1`, `Ratio3_5to1`, `Ratio4to1`, and more.
+
+---
+
+## De-esser
+
+```python
+await client.set_deeser(serial, 30)   # 0–100
+```
+
+---
+
+## Scribble Strips
+
+The GoXLR Full has small OLED displays above each fader.
+
+```python
+from goxlrutil_api.protocol.types import FaderName
+
+# Set the display text (up to 8 characters)
+await client.set_scribble_text(serial, FaderName.A, "MIC")
+
+# Set a number label (shown below the text)
+await client.set_scribble_number(serial, FaderName.A, "1")
+
+# Set an icon by name (None clears the icon)
+await client.set_scribble_icon(serial, FaderName.A, "mic.png")
+await client.set_scribble_icon(serial, FaderName.A, None)   # clear
+
+# Invert the display colours
+await client.set_scribble_invert(serial, FaderName.A, True)
+```
+
+---
 
 ### Monitor and VOD
 
@@ -867,13 +1044,20 @@ await client.set_swear_button_volume_pct(serial, 50.0)  # -17 dB
 The submix system allows Mix A (headphones / direct monitor) and Mix B (stream / broadcast) to have independent per-channel volumes.
 
 ```python
-from goxlrutil_api.protocol.types import ChannelName
+from goxlrutil_api.protocol.types import ChannelName, OutputDevice, Mix
 
 # Enable the submix system
 await client.set_submix_enabled(serial, True)
 
 # Set the Mix B volume for a specific channel (0–255)
 await client.set_submix_volume(serial, ChannelName.Music, 128)  # music at 50% on stream
+
+# Link a channel's Mix B volume to its Mix A volume (they move together)
+await client.set_submix_linked(serial, ChannelName.Music, True)
+
+# Route an output to Mix A or Mix B
+# Mix: A, B
+await client.set_submix_output_mix(serial, OutputDevice.BroadcastMix, Mix.B)
 ```
 
 ### Save profile
@@ -885,7 +1069,110 @@ await client.save_profile(serial)
 
 ---
 
+## Cough Button
+
+```python
+from goxlrutil_api.protocol.types import MuteFunction, MuteState
+
+# Set the mute state of the cough button
+await client.set_cough_mute_state(serial, MuteState.MutedToAll)
+
+# Configure cough button behaviour
+# MuteFunction: All, ToStream, ToVoiceChat, ToPhones, ToLineOut
+await client.set_cough_mute_function(serial, MuteFunction.ToStream)
+
+# Hold mode: True = mute while button held, False = toggle on press
+await client.set_cough_is_hold(serial, True)
+```
+
+---
+
 ## Profiles
+
+```python
+# List and load profiles (see also Sending Commands → Profiles)
+profiles = await client.list_profiles(serial)
+await client.load_profile(serial, "Gaming")
+await client.load_mic_profile(serial, "StudioMic")
+
+# Persist current settings
+await client.save_profile(serial)
+
+# Save as a new profile
+await client.save_profile_as(serial, "MyNewProfile")
+
+# Save mic settings (to active mic profile or as new)
+await client.save_mic_profile(serial)
+await client.save_mic_profile_as(serial, "NewMicProfile")
+
+# Import only the colour settings from another profile
+await client.load_profile_colours(serial, "ColoursOnly")
+
+# Rename the active effect preset slot
+await client.rename_active_preset(serial, "BrightStar")
+```
+
+---
+
+## Sampler Management
+
+```python
+from goxlrutil_api.protocol.types import SampleBank, SampleButtons, SamplePlaybackMode, SamplePlayOrder
+
+# Add an audio file to a sampler slot (path on the daemon host)
+await client.add_sample(serial, SampleBank.A, SampleButtons.TopLeft, "/home/user/sounds/fx.wav")
+
+# Remove a sample by its index in the slot's list
+await client.remove_sample_by_index(serial, SampleBank.A, SampleButtons.TopLeft, 0)
+
+# Trim the in/out points of a sample (0.0–1.0 as fraction of file length)
+await client.set_sample_start_percent(serial, SampleBank.A, SampleButtons.TopLeft, 0, 0.1)
+await client.set_sample_stop_percent(serial, SampleBank.A, SampleButtons.TopLeft, 0, 0.9)
+
+# Set the playback mode for a slot
+# SamplePlaybackMode: PlayNext, StopOnEnd, Loop, SingleLoop, OncePerPress
+await client.set_sampler_function(
+    serial, SampleBank.A, SampleButtons.TopLeft, SamplePlaybackMode.Loop
+)
+
+# Set the order in which samples in a slot are played
+# SamplePlayOrder: Sequential, Random
+await client.set_sampler_order(
+    serial, SampleBank.A, SampleButtons.TopLeft, SamplePlayOrder.Sequential
+)
+
+# Global sampler settings
+await client.set_sampler_fade_duration(serial, 200)    # fade-out ms
+await client.set_sampler_reset_on_clear(serial, True)  # rewind on stop
+```
+
+---
+
+## Misc Settings
+
+```python
+from goxlrutil_api.protocol.types import DisplayModeComponents, DisplayMode
+
+# Lock all faders to their current positions
+await client.set_lock_faders(serial, True)
+
+# When VC is muted, also mute the Chat Mic channel
+await client.set_vc_mute_also_mute_cm(serial, True)
+
+# How long a fader button must be held to trigger a mute-hold (ms)
+await client.set_mute_hold_duration(serial, 500)
+
+# Change the display mode for a UI component
+# DisplayModeComponents: Equaliser, NoiseGate, Compressor
+# DisplayMode: Simple, Advanced
+await client.set_element_display_mode(
+    serial, DisplayModeComponents.Equaliser, DisplayMode.Advanced
+)
+```
+
+---
+
+## Error Handling
 
 ```python
 from goxlrutil_api.exceptions import GoXLRError, ConnectionError, CommandError, ProtocolError

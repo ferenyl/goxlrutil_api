@@ -13,21 +13,37 @@ from goxlrutil_api.protocol.types import (
     ButtonColourGroups,
     ButtonColourOffStyle,
     ChannelName,
+    CompressorAttackTime,
+    CompressorRatio,
+    CompressorReleaseTime,
+    DisplayMode,
+    DisplayModeComponents,
     EchoStyle,
     EffectBankPresets,
     EncoderColourTargets,
+    EqFrequencies,
     FaderDisplayStyle,
     FaderName,
+    GateTimes,
     GenderStyle,
+    HardTuneSource,
+    HardTuneStyle,
     InputDevice,
+    MegaphoneStyle,
     MicrophoneType,
+    MiniEqFrequencies,
+    Mix,
     MuteFunction,
     MuteState,
     OutputDevice,
     PitchStyle,
     ReverbStyle,
+    RobotRange,
+    RobotStyle,
     SampleBank,
     SampleButtons,
+    SamplePlaybackMode,
+    SamplePlayOrder,
     SamplerColourTargets,
     SimpleColourTargets,
     VodMode,
@@ -130,6 +146,14 @@ class GoXLRCommand:
     def set_cough_mute_state(state: MuteState) -> GoXLRCommand:
         return GoXLRCommand("SetCoughMuteState", state)
 
+    @staticmethod
+    def set_cough_mute_function(mute: MuteFunction) -> GoXLRCommand:
+        return GoXLRCommand("SetCoughMuteFunction", mute)
+
+    @staticmethod
+    def set_cough_is_hold(hold: bool) -> GoXLRCommand:
+        return GoXLRCommand("SetCoughIsHold", hold)
+
     # -- Routing -------------------------------------------------------------
 
     @staticmethod
@@ -147,12 +171,83 @@ class GoXLRCommand:
         return GoXLRCommand("SetMegaphoneEnabled", enabled)
 
     @staticmethod
+    def set_megaphone_style(style: MegaphoneStyle) -> GoXLRCommand:
+        return GoXLRCommand("SetMegaphoneStyle", style)
+
+    @staticmethod
+    def set_megaphone_amount(amount: int) -> GoXLRCommand:
+        """amount 0–100"""
+        return GoXLRCommand("SetMegaphoneAmount", amount)
+
+    @staticmethod
+    def set_megaphone_post_gain(gain: int) -> GoXLRCommand:
+        """gain -20..20 dB"""
+        return GoXLRCommand("SetMegaphonePostGain", gain)
+
+    @staticmethod
     def set_robot_enabled(enabled: bool) -> GoXLRCommand:
         return GoXLRCommand("SetRobotEnabled", enabled)
 
     @staticmethod
+    def set_robot_style(style: RobotStyle) -> GoXLRCommand:
+        return GoXLRCommand("SetRobotStyle", style)
+
+    @staticmethod
+    def set_robot_gain(range_: RobotRange, gain: int) -> GoXLRCommand:
+        return GoXLRCommand("SetRobotGain", [range_, gain])
+
+    @staticmethod
+    def set_robot_freq(range_: RobotRange, freq: int) -> GoXLRCommand:
+        return GoXLRCommand("SetRobotFreq", [range_, freq])
+
+    @staticmethod
+    def set_robot_width(range_: RobotRange, width: int) -> GoXLRCommand:
+        return GoXLRCommand("SetRobotWidth", [range_, width])
+
+    @staticmethod
+    def set_robot_waveform(waveform: int) -> GoXLRCommand:
+        """waveform 0–5"""
+        return GoXLRCommand("SetRobotWaveform", waveform)
+
+    @staticmethod
+    def set_robot_pulse_width(width: int) -> GoXLRCommand:
+        """width 0–100"""
+        return GoXLRCommand("SetRobotPulseWidth", width)
+
+    @staticmethod
+    def set_robot_threshold(threshold: int) -> GoXLRCommand:
+        return GoXLRCommand("SetRobotThreshold", threshold)
+
+    @staticmethod
+    def set_robot_dry_mix(mix: int) -> GoXLRCommand:
+        return GoXLRCommand("SetRobotDryMix", mix)
+
+    @staticmethod
     def set_hard_tune_enabled(enabled: bool) -> GoXLRCommand:
         return GoXLRCommand("SetHardTuneEnabled", enabled)
+
+    @staticmethod
+    def set_hard_tune_style(style: HardTuneStyle) -> GoXLRCommand:
+        return GoXLRCommand("SetHardTuneStyle", style)
+
+    @staticmethod
+    def set_hard_tune_amount(amount: int) -> GoXLRCommand:
+        """amount 0–100"""
+        return GoXLRCommand("SetHardTuneAmount", amount)
+
+    @staticmethod
+    def set_hard_tune_rate(rate: int) -> GoXLRCommand:
+        """rate 0–100"""
+        return GoXLRCommand("SetHardTuneRate", rate)
+
+    @staticmethod
+    def set_hard_tune_window(window: int) -> GoXLRCommand:
+        """window ms"""
+        return GoXLRCommand("SetHardTuneWindow", window)
+
+    @staticmethod
+    def set_hard_tune_source(source: HardTuneSource) -> GoXLRCommand:
+        return GoXLRCommand("SetHardTuneSource", source)
 
     @staticmethod
     def set_active_effect_preset(preset: EffectBankPresets) -> GoXLRCommand:
@@ -168,6 +263,46 @@ class GoXLRCommand:
     def set_reverb_amount(amount: int) -> GoXLRCommand:
         return GoXLRCommand("SetReverbAmount", amount)
 
+    @staticmethod
+    def set_reverb_decay(ms: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbDecay", ms)
+
+    @staticmethod
+    def set_reverb_early_level(level: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbEarlyLevel", level)
+
+    @staticmethod
+    def set_reverb_tail_level(level: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbTailLevel", level)
+
+    @staticmethod
+    def set_reverb_pre_delay(ms: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbPreDelay", ms)
+
+    @staticmethod
+    def set_reverb_low_colour(colour: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbLowColour", colour)
+
+    @staticmethod
+    def set_reverb_high_colour(colour: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbHighColour", colour)
+
+    @staticmethod
+    def set_reverb_high_factor(factor: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbHighFactor", factor)
+
+    @staticmethod
+    def set_reverb_diffuse(diffuse: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbDiffuse", diffuse)
+
+    @staticmethod
+    def set_reverb_mod_speed(speed: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbModSpeed", speed)
+
+    @staticmethod
+    def set_reverb_mod_depth(depth: int) -> GoXLRCommand:
+        return GoXLRCommand("SetReverbModDepth", depth)
+
     # -- Echo ----------------------------------------------------------------
 
     @staticmethod
@@ -178,6 +313,39 @@ class GoXLRCommand:
     def set_echo_amount(amount: int) -> GoXLRCommand:
         return GoXLRCommand("SetEchoAmount", amount)
 
+    @staticmethod
+    def set_echo_feedback(feedback: int) -> GoXLRCommand:
+        """feedback 0–100"""
+        return GoXLRCommand("SetEchoFeedback", feedback)
+
+    @staticmethod
+    def set_echo_tempo(bpm: int) -> GoXLRCommand:
+        return GoXLRCommand("SetEchoTempo", bpm)
+
+    @staticmethod
+    def set_echo_delay_left(ms: int) -> GoXLRCommand:
+        return GoXLRCommand("SetEchoDelayLeft", ms)
+
+    @staticmethod
+    def set_echo_delay_right(ms: int) -> GoXLRCommand:
+        return GoXLRCommand("SetEchoDelayRight", ms)
+
+    @staticmethod
+    def set_echo_feedback_left(feedback: int) -> GoXLRCommand:
+        return GoXLRCommand("SetEchoFeedbackLeft", feedback)
+
+    @staticmethod
+    def set_echo_feedback_right(feedback: int) -> GoXLRCommand:
+        return GoXLRCommand("SetEchoFeedbackRight", feedback)
+
+    @staticmethod
+    def set_echo_xfb_l_to_r(feedback: int) -> GoXLRCommand:
+        return GoXLRCommand("SetEchoFeedbackXFBLtoR", feedback)
+
+    @staticmethod
+    def set_echo_xfb_r_to_l(feedback: int) -> GoXLRCommand:
+        return GoXLRCommand("SetEchoFeedbackXFBRtoL", feedback)
+
     # -- Pitch ---------------------------------------------------------------
 
     @staticmethod
@@ -187,6 +355,11 @@ class GoXLRCommand:
     @staticmethod
     def set_pitch_amount(amount: int) -> GoXLRCommand:
         return GoXLRCommand("SetPitchAmount", amount)
+
+    @staticmethod
+    def set_pitch_character(character: int) -> GoXLRCommand:
+        """character 0–100"""
+        return GoXLRCommand("SetPitchCharacter", character)
 
     # -- Gender --------------------------------------------------------------
 
@@ -211,6 +384,50 @@ class GoXLRCommand:
     @staticmethod
     def stop_sample_playback(bank: SampleBank, button: SampleButtons) -> GoXLRCommand:
         return GoXLRCommand("StopSamplePlayback", [bank, button])
+
+    # -- Sampler management --------------------------------------------------
+
+    @staticmethod
+    def set_sampler_function(
+        bank: SampleBank, button: SampleButtons, mode: SamplePlaybackMode
+    ) -> GoXLRCommand:
+        return GoXLRCommand("SetSamplerFunction", [bank, button, mode])
+
+    @staticmethod
+    def set_sampler_order(
+        bank: SampleBank, button: SampleButtons, order: SamplePlayOrder
+    ) -> GoXLRCommand:
+        return GoXLRCommand("SetSamplerOrder", [bank, button, order])
+
+    @staticmethod
+    def add_sample(bank: SampleBank, button: SampleButtons, path: str) -> GoXLRCommand:
+        return GoXLRCommand("AddSample", [bank, button, path])
+
+    @staticmethod
+    def remove_sample_by_index(
+        bank: SampleBank, button: SampleButtons, index: int
+    ) -> GoXLRCommand:
+        return GoXLRCommand("RemoveSampleByIndex", [bank, button, index])
+
+    @staticmethod
+    def set_sample_start_percent(
+        bank: SampleBank, button: SampleButtons, index: int, percent: float
+    ) -> GoXLRCommand:
+        return GoXLRCommand("SetSampleStartPercent", [bank, button, index, percent])
+
+    @staticmethod
+    def set_sample_stop_percent(
+        bank: SampleBank, button: SampleButtons, index: int, percent: float
+    ) -> GoXLRCommand:
+        return GoXLRCommand("SetSampleStopPercent", [bank, button, index, percent])
+
+    @staticmethod
+    def set_sampler_fade_duration(ms: int) -> GoXLRCommand:
+        return GoXLRCommand("SetSamplerFadeDuration", ms)
+
+    @staticmethod
+    def set_sampler_reset_on_clear(reset: bool) -> GoXLRCommand:
+        return GoXLRCommand("SetSamplerResetOnClear", reset)
 
     # -- Lighting ------------------------------------------------------------
 
@@ -324,6 +541,95 @@ class GoXLRCommand:
     def set_gate_active(active: bool) -> GoXLRCommand:
         return GoXLRCommand("SetGateActive", active)
 
+    @staticmethod
+    def set_gate_attenuation(attenuation: int) -> GoXLRCommand:
+        """attenuation 0–100 %"""
+        return GoXLRCommand("SetGateAttenuation", attenuation)
+
+    @staticmethod
+    def set_gate_attack(attack: GateTimes) -> GoXLRCommand:
+        return GoXLRCommand("SetGateAttack", attack)
+
+    @staticmethod
+    def set_gate_release(release: GateTimes) -> GoXLRCommand:
+        return GoXLRCommand("SetGateRelease", release)
+
+    # -- EQ ------------------------------------------------------------------
+
+    @staticmethod
+    def set_eq_gain(freq: EqFrequencies, gain: int) -> GoXLRCommand:
+        """gain -9..9 dB"""
+        return GoXLRCommand("SetEqGain", [freq, gain])
+
+    @staticmethod
+    def set_eq_freq(freq: EqFrequencies, value: float) -> GoXLRCommand:
+        return GoXLRCommand("SetEqFreq", [freq, value])
+
+    @staticmethod
+    def set_eq_mini_gain(freq: MiniEqFrequencies, gain: int) -> GoXLRCommand:
+        """gain -9..9 dB"""
+        return GoXLRCommand("SetEqMiniGain", [freq, gain])
+
+    @staticmethod
+    def set_eq_mini_freq(freq: MiniEqFrequencies, value: float) -> GoXLRCommand:
+        return GoXLRCommand("SetEqMiniFreq", [freq, value])
+
+    # -- Compressor ----------------------------------------------------------
+
+    @staticmethod
+    def set_compressor_threshold(threshold: int) -> GoXLRCommand:
+        """threshold -40..0 dB"""
+        return GoXLRCommand("SetCompressorThreshold", threshold)
+
+    @staticmethod
+    def set_compressor_ratio(ratio: CompressorRatio) -> GoXLRCommand:
+        return GoXLRCommand("SetCompressorRatio", ratio)
+
+    @staticmethod
+    def set_compressor_attack(attack: CompressorAttackTime) -> GoXLRCommand:
+        return GoXLRCommand("SetCompressorAttack", attack)
+
+    @staticmethod
+    def set_compressor_release(release: CompressorReleaseTime) -> GoXLRCommand:
+        return GoXLRCommand("SetCompressorReleaseTime", release)
+
+    @staticmethod
+    def set_compressor_makeup_gain(gain: int) -> GoXLRCommand:
+        """gain 0..24 dB"""
+        return GoXLRCommand("SetCompressorMakeupGain", gain)
+
+    # -- De-esser ------------------------------------------------------------
+
+    @staticmethod
+    def set_deeser(amount: int) -> GoXLRCommand:
+        """amount 0..100"""
+        return GoXLRCommand("SetDeeser", amount)
+
+    # -- Mic gain ------------------------------------------------------------
+
+    @staticmethod
+    def set_microphone_gain(mic_type: MicrophoneType, gain: int) -> GoXLRCommand:
+        """gain 0..72 dB"""
+        return GoXLRCommand("SetMicrophoneGain", [mic_type, gain])
+
+    # -- Scribble strips -----------------------------------------------------
+
+    @staticmethod
+    def set_scribble_text(fader: FaderName, text: str) -> GoXLRCommand:
+        return GoXLRCommand("SetScribbleText", [fader, text])
+
+    @staticmethod
+    def set_scribble_icon(fader: FaderName, icon: str | None) -> GoXLRCommand:
+        return GoXLRCommand("SetScribbleIcon", [fader, icon])
+
+    @staticmethod
+    def set_scribble_number(fader: FaderName, number: str) -> GoXLRCommand:
+        return GoXLRCommand("SetScribbleNumber", [fader, number])
+
+    @staticmethod
+    def set_scribble_invert(fader: FaderName, invert: bool) -> GoXLRCommand:
+        return GoXLRCommand("SetScribbleInvert", [fader, invert])
+
     # -- Profiles ------------------------------------------------------------
 
     @staticmethod
@@ -364,6 +670,64 @@ class GoXLRCommand:
     @staticmethod
     def set_monitor_mix(output: OutputDevice) -> GoXLRCommand:
         return GoXLRCommand("SetMonitorMix", output)
+
+    # -- Submix extras -------------------------------------------------------
+
+    @staticmethod
+    def set_submix_linked(channel: ChannelName, linked: bool) -> GoXLRCommand:
+        return GoXLRCommand("SetSubMixLinked", [channel, linked])
+
+    @staticmethod
+    def set_submix_output_mix(output: OutputDevice, mix: Mix) -> GoXLRCommand:
+        return GoXLRCommand("SetSubMixOutputMix", [output, mix])
+
+    # -- Misc ----------------------------------------------------------------
+
+    @staticmethod
+    def set_lock_faders(locked: bool) -> GoXLRCommand:
+        return GoXLRCommand("SetLockFaders", locked)
+
+    @staticmethod
+    def set_vc_mute_also_mute_cm(enabled: bool) -> GoXLRCommand:
+        return GoXLRCommand("SetVCMuteAlsoMuteCM", enabled)
+
+    @staticmethod
+    def set_mute_hold_duration(ms: int) -> GoXLRCommand:
+        return GoXLRCommand("SetMuteHoldDuration", ms)
+
+    @staticmethod
+    def set_element_display_mode(
+        component: DisplayModeComponents, mode: DisplayMode
+    ) -> GoXLRCommand:
+        return GoXLRCommand("SetElementDisplayMode", [component, mode])
+
+    # -- Profile extras ------------------------------------------------------
+
+    @staticmethod
+    def save_profile_as(name: str) -> GoXLRCommand:
+        return GoXLRCommand("SaveProfileAs", name)
+
+    @staticmethod
+    def save_mic_profile() -> GoXLRCommand:
+        return GoXLRCommand("SaveMicProfile", None)
+
+    @staticmethod
+    def save_mic_profile_as(name: str) -> GoXLRCommand:
+        return GoXLRCommand("SaveMicProfileAs", name)
+
+    @staticmethod
+    def load_profile_colours(name: str) -> GoXLRCommand:
+        return GoXLRCommand("LoadProfileColours", name)
+
+    @staticmethod
+    def rename_active_preset(name: str) -> GoXLRCommand:
+        return GoXLRCommand("RenameActivePreset", name)
+
+    # -- All fader colours ---------------------------------------------------
+
+    @staticmethod
+    def set_all_fader_colours(colour_one: str, colour_two: str) -> GoXLRCommand:
+        return GoXLRCommand("SetAllFaderColours", [colour_one, colour_two])
 
 
 # ---------------------------------------------------------------------------
