@@ -1,0 +1,122 @@
+{
+  "config": {
+    "http_settings": {
+      "enabled": true,
+      "bind_address": "0.0.0.0",
+      "cors_enabled": false,
+      "port": 14564
+    },
+    "daemon_version": "1.0.0",
+    "allow_network_access": false,
+    "log_level": "Info",
+    "show_tray_icon": true,
+    "tts_enabled": null,
+    "autostart_enabled": false,
+    "open_ui_on_launch": false,
+    "platform": "linux"
+  },
+  "firmware": {},
+  "mixers": {
+    "TEST_SERIAL_001": {
+      "hardware": {
+        "versions": {"firmware": null, "fpga_count": null, "dice": null},
+        "serial_number": "TEST_SERIAL_001",
+        "manufactured_date": "2023-01-01",
+        "device_type": "Full",
+        "colour_way": "Black",
+        "usb_device": {
+          "manufacturer_name": "TC Helicon",
+          "product_name": "GoXLR",
+          "version": [1, 0, 0],
+          "bus_number": 1,
+          "address": 2,
+          "identifier": null
+        }
+      },
+      "shutdown_commands": [],
+      "sleep_commands": [],
+      "wake_commands": [],
+      "fader_status": {
+        "A": {"channel": "Mic", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"},
+        "B": {"channel": "Game", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"},
+        "C": {"channel": "Music", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"},
+        "D": {"channel": "Chat", "mute_type": "All", "scribble": null, "mute_state": "Unmuted"}
+      },
+      "mic_status": {
+        "mic_type": "Dynamic",
+        "mic_gains": {"Dynamic": 50, "Condenser": 50, "Jack": 50},
+        "equaliser": {"gain": {}, "frequency": {}},
+        "equaliser_mini": {"gain": {}, "frequency": {}},
+        "noise_gate": {
+          "threshold": -55, "attack": "Attack10ms", "release": "Attack10ms",
+          "enabled": false, "attenuation": 100
+        },
+        "compressor": {
+          "threshold": 0, "ratio": "Ratio1to1", "attack": "Attack0ms",
+          "release": "Release0ms", "makeup_gain": 0
+        }
+      },
+      "levels": {
+        "submix_supported": false,
+        "output_monitor": "Headphones",
+        "volumes": {
+          "Mic": 200, "LineIn": 255, "Console": 255, "System": 255,
+          "Game": 255, "Chat": 255, "Sample": 200, "Music": 255,
+          "Headphones": 200, "MicMonitor": 128, "LineOut": 255
+        },
+        "submix": null,
+        "bleep": -6,
+        "deess": 0
+      },
+      "router": {
+        "Microphone": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": true, "Sampler": false},
+        "Chat": {"Headphones": true, "BroadcastMix": false, "LineOut": false, "ChatMic": false, "Sampler": false},
+        "Music": {"Headphones": true, "BroadcastMix": true, "LineOut": true, "ChatMic": false, "Sampler": false},
+        "Game": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false},
+        "Console": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false},
+        "LineIn": {"Headphones": true, "BroadcastMix": false, "LineOut": false, "ChatMic": false, "Sampler": false},
+        "System": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false},
+        "Samples": {"Headphones": true, "BroadcastMix": true, "LineOut": false, "ChatMic": false, "Sampler": false}
+      },
+      "cough_button": {"is_toggle": false, "mute_type": "All", "state": "Unmuted"},
+      "lighting": {
+        "animation": {"supported": false, "mode": "None", "mod1": 0, "mod2": 0, "waterfall_direction": "Off"},
+        "faders": {},
+        "buttons": {},
+        "simple": {},
+        "sampler": {},
+        "encoders": {}
+      },
+      "effects": null,
+      "sampler": null,
+      "settings": {
+        "display": {"gate": "Simple", "compressor": "Simple", "equaliser": "Simple", "equaliser_fine": "Simple"},
+        "mute_hold_duration": 500,
+        "vc_mute_also_mute_cm": false,
+        "enable_monitor_with_fx": false,
+        "reset_sampler_on_clear": false,
+        "lock_faders": false,
+        "fade_duration": 0,
+        "vod_mode": "NormalMode"
+      },
+      "button_down": {},
+      "profile_name": "Default",
+      "mic_profile_name": "Default"
+    }
+  },
+  "paths": {
+    "profile_directory": "/home/user/.local/share/goxlr/profiles",
+    "mic_profile_directory": "/home/user/.local/share/goxlr/mic-profiles",
+    "samples_directory": "/home/user/.local/share/goxlr/samples",
+    "presets_directory": "/home/user/.local/share/goxlr/presets",
+    "icons_directory": "/home/user/.local/share/goxlr/icons",
+    "logs_directory": "/home/user/.local/share/goxlr/logs"
+  },
+  "files": {
+    "profiles": ["Default"],
+    "mic_profiles": ["Default"],
+    "presets": [],
+    "samples": {},
+    "icons": []
+  }
+}

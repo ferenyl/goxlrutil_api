@@ -1,0 +1,74 @@
+[tool.poetry]
+name = "goxlrutil-api"
+version = "0.1.0"
+description = "Async Python library for communicating with the GoXLR Utility daemon"
+authors = []
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "goxlrutil_api", from = "src" }]
+keywords = ["goxlr", "audio", "streaming", "api"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+httpx = { version = ">=0.27", extras = ["http2"] }
+httpx-ws = ">=0.6"
+jsonpatch = ">=1.33"
+
+[tool.poetry.extras]
+webapp = ["fastapi", "uvicorn", "jinja2", "python-multipart"]
+
+[tool.poetry.dependencies.fastapi]
+version = ">=0.115"
+optional = true
+
+[tool.poetry.dependencies.uvicorn]
+version = ">=0.30"
+optional = true
+extras = ["standard"]
+
+[tool.poetry.dependencies.jinja2]
+version = ">=3.1"
+optional = true
+
+[tool.poetry.dependencies.python-multipart]
+version = ">=0.0.9"
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+pytest-asyncio = ">=0.24"
+pytest-httpx = ">=0.32"
+ruff = ">=0.6"
+pyright = ">=1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+src = ["src"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN"]
+ignore = ["ANN101", "ANN102"]
+
+[tool.pyright]
+pythonVersion = "3.14"
+venvPath = "."
+venv = ".venv"
+include = ["src", "apps", "tests"]
+strict = ["src/goxlrutil_api"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

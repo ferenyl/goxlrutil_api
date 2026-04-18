@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GoXLR Demo</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <header>
+    <h1>🎙 GoXLR Demo</h1>
+    <div class="status-badge {{ 'connected' if connected else 'disconnected' }}">
+      {{ "● Connected" if connected else "○ Disconnected" }}
+    </div>
+  </header>
+
+  {% if not connected %}
+  <div class="card error">
+    <p>Could not connect to the GoXLR daemon. Make sure <code>goxlr-daemon</code> is running.</p>
+  </div>
+  {% endif %}
+
+  {% if status %}
+    {% for serial, mixer in status.mixers.items() %}
+    <section class="mixer-card">
+      <h2>{{ mixer.hardware.device_type.value }} – <code>{{ serial }}</code></h2>
+      <p class="profile">Profile: <strong>{{ mixer.profile_name }}</strong></p>
+
+      <!-- Faders -->
+      <h3>Faders</h3>
+      <div class="faders">
+        {% for fname in fader_names %}
+        {% set fs = mixer.fader_status.get(fname) %}
+        {% if fs %}
+        <div class="fader-block">
+          <label>{{ fname }}: <em>{{ fs.channel.value }}</em></label>
+          <div class="mute-indicator {{ 'muted' if fs.mute_state.value != 'Unmuted' else '' }}">
+            {{ fs.mute_state.value }}
+          </div>
+          <div class="mute-buttons">
+            <button hx-post="/api/mute/{{ serial }}/{{ fname }}/Unmuted"
+                    hx-target="#flash" hx-swap="innerHTML"
+                    class="btn-green">Unmute</button>
+            <button hx-post="/api/mute/{{ serial }}/{{ fname }}/MutedToAll"
+                    hx-target="#flash" hx-swap="innerHTML"
+                    class="btn-red">Mute All</button>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Volumes -->
+      <h3>Volumes</h3>
+      <div class="volumes">
+        {% for ch, vol in mixer.levels.volumes.items() %}
+        <div class="vol-row">
+          <label>{{ ch }}</label>
+          <input type="range" min="0" max="255" value="{{ vol }}"
+                 hx-post="/api/volume/{{ serial }}/{{ ch }}/{{ '${this.value}' }}"
+                 hx-trigger="change"
+                 hx-target="#flash" hx-swap="innerHTML"
+                 oninput="this.nextElementSibling.textContent=this.value"
+                 hx-vals="js:{}"
+                 _="on change set my @hx-post to '/api/volume/{{ serial }}/{{ ch }}/' + my.value"/>
+          <span>{{ vol }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- FX -->
+      {% if mixer.effects %}
+      <h3>FX</h3>
+      <div class="fx-row">
+        <span>Effects enabled: <strong>{{ mixer.effects.is_enabled }}</strong></span>
+        <button hx-post="/api/fx/{{ serial }}/true"
+                hx-target="#flash" hx-swap="innerHTML"
+                class="btn-green">Enable FX</button>
+        <button hx-post="/api/fx/{{ serial }}/false"
+                hx-target="#flash" hx-swap="innerHTML"
+                class="btn-red">Disable FX</button>
+      </div>
+      {% endif %}
+
+    </section>
+    {% endfor %}
+  {% endif %}
+
+  <div id="flash" class="flash"></div>
+
+  <script>
+    // Auto-refresh status every 5 seconds
+    setInterval(() => {
+      fetch('/api/status').then(r => r.json()).then(data => {
+        document.querySelector('.status-badge').textContent =
+          data.connected ? '● Connected' : '○ Disconnected';
+      });
+    }, 5000);
+
+    // Volume sliders: update hx-post on input change
+    document.querySelectorAll('input[type=range]').forEach(slider => {
+      slider.addEventListener('input', function() {
+        const parts = this.getAttribute('hx-post').split('/');
+        parts[parts.length - 1] = this.value;
+        this.setAttribute('hx-post', parts.join('/'));
+        this.nextElementSibling.textContent = this.value;
+      });
+    });
+  </script>
+</body>
+</html>
