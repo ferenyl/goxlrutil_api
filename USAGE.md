@@ -27,6 +27,8 @@ A comprehensive reference for humans and AI agents integrating with the library.
 19. [Synchronous Wrapper](#synchronous-wrapper)
 20. [Full Integration Example](#full-integration-example)
 21. [Protocol Notes](#protocol-notes)
+22. [Logging](#logging)
+23. [Importing Callback and State Types](#importing-callback-and-state-types)
 
 ---
 
@@ -145,7 +147,7 @@ async with GoXLRClient(transport) as client:
 | `await client.set_fader_mute_state(serial, fader, state)` | `None` | Mute/unmute a fader. |
 | `await client.set_fx_enabled(serial, enabled)` | `None` | Enable or disable effects. |
 | `client.get_mixer(serial)` | `MixerStatus \| None` | Cached mixer state — no network call. |
-| `client.serials` | `list[str]` | Serial numbers of all connected mixers (from cache). |
+| `client.serials` | `list[str]` | Serial numbers of all connected mixers (from cache). Requires at least one `get_status()` call to be populated. |
 | `client.state` | `DaemonState` | Access the live internal state cache. |
 
 ---
@@ -786,11 +788,14 @@ await client.set_reverb_amount(serial, 40)
 await client.set_echo_style(serial, EchoStyle.Studio)
 await client.set_echo_amount(serial, 25)
 
-# Pitch shift style and amount (-24–24 semitones)
+# Pitch shift style and amount
+# Without HardTune: -24–24 (Wide) or same range applies for Narrow
+# With HardTune enabled: -2–2 (Wide) or -1–1 (Narrow)
 await client.set_pitch_style(serial, PitchStyle.Wide)
 await client.set_pitch_amount(serial, -12)
 
-# Gender shift style and amount (-12–12)
+# Gender shift style and amount
+# Narrow style: -12–12  |  Wide style: -50–50
 await client.set_gender_style(serial, GenderStyle.Medium)
 await client.set_gender_amount(serial, 6)
 ```
@@ -1053,6 +1058,54 @@ Patch operations use paths rooted at the `Status` object, for example:
 ### Important Constraints
 
 - Button events **require** WebSocket transport — the Unix socket and HTTP transports never receive patches.
+- **Auto-reconnect** is only available with `WebSocketTransport`. `UnixSocketTransport` and `HttpTransport` are request/response only and will raise `ConnectionError` if the daemon is not reachable.
 - `long_pressed` fires while the button is still held; a `released` event will follow when the button is let go.
 - The serial number changes per physical device. Always discover it via `get_status()` — never hardcode it.
+- `client.serials` and `client.get_mixer(serial)` return data from the internal state cache. They are empty/`None` until the first `get_status()` call completes.
 - `button_down` only reflects currently-held hardware buttons. Software mute state is tracked separately in `fader_status[fader].mute_state`.
+
+---
+
+## Logging
+
+The library uses the standard Python `logging` module under the `goxlrutil_api` logger hierarchy. Enable debug output to trace all frames sent and received:
+
+```python
+import logging
+logging.getLogger("goxlrutil_api").setLevel(logging.DEBUG)
+```
+
+To silence reconnect noise in production while keeping errors visible:
+
+```python
+logging.getLogger("goxlrutil_api").setLevel(logging.WARNING)
+```
+
+---
+
+## Importing Callback and State Types
+
+When annotating callbacks or caching state, import the relevant types directly:
+
+```python
+from goxlrutil_api import (
+    ConnectListener,     # Callable[[], Awaitable[None]]
+    DisconnectListener,  # Callable[[], Awaitable[None]]
+    MixerStatus,         # dataclass holding per-mixer state
+)
+from goxlrutil_api.protocol.responses import DaemonStatus
+from goxlrutil_api.events import ButtonEvent
+
+async def handle_connect() -> None:
+    ...
+
+async def handle_disconnect() -> None:
+    ...
+
+async with GoXLRClient(
+    transport,
+    on_connect=handle_connect,
+    on_disconnect=handle_disconnect,
+) as client:
+    mixer: MixerStatus | None = client.get_mixer(serial)
+```
