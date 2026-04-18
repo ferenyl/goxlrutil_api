@@ -14,18 +14,19 @@ A comprehensive reference for humans and AI agents integrating with the library.
 6. [Sending Commands](#sending-commands)
 7. [Reading State](#reading-state)
 8. [Live Updates via Patches](#live-updates-via-patches)
-9. [Button Events](#button-events)
-10. [Lighting & Colours](#lighting--colours)
-11. [Effects & Sampler](#effects--sampler)
-12. [Fader Assignment & Routing](#fader-assignment--routing)
-13. [Effect Parameters](#effect-parameters)
-14. [Mic Settings](#mic-settings)
-15. [Mix, Monitor & Submix](#mix-monitor--submix)
-16. [Profiles](#profiles)
-17. [Error Handling](#error-handling)
-18. [Synchronous Wrapper](#synchronous-wrapper)
-19. [Full Integration Example](#full-integration-example)
-20. [Protocol Notes](#protocol-notes)
+9. [Reconnection & Connection Events](#reconnection--connection-events)
+10. [Button Events](#button-events)
+11. [Lighting & Colours](#lighting--colours)
+12. [Effects & Sampler](#effects--sampler)
+13. [Fader Assignment & Routing](#fader-assignment--routing)
+14. [Effect Parameters](#effect-parameters)
+15. [Mic Settings](#mic-settings)
+16. [Mix, Monitor & Submix](#mix-monitor--submix)
+17. [Profiles](#profiles)
+18. [Error Handling](#error-handling)
+19. [Synchronous Wrapper](#synchronous-wrapper)
+20. [Full Integration Example](#full-integration-example)
+21. [Protocol Notes](#protocol-notes)
 
 ---
 
@@ -114,9 +115,11 @@ asyncio.run(main())
 ```python
 GoXLRClient(
     transport: Transport,
-    on_state_update: PatchListener | None = None,  # called after every patch
-    on_button_event: ButtonListener | None = None,  # called on press/release/long-press
-    long_press_threshold: float = 0.5,             # seconds before long_pressed fires
+    on_state_update: PatchListener | None = None,    # called after every patch
+    on_button_event: ButtonListener | None = None,   # called on press/release/long-press
+    on_connect: ConnectListener | None = None,       # called when connection is established / restored
+    on_disconnect: DisconnectListener | None = None, # called when connection is lost
+    long_press_threshold: float = 0.5,               # seconds before long_pressed fires
 )
 ```
 
@@ -138,8 +141,11 @@ async with GoXLRClient(transport) as client:
 | `await client.get_mic_level(serial)` | `float` | Current mic level (0.0–1.0). |
 | `await client.command(serial, cmd)` | `None` | Send any `GoXLRCommand`. |
 | `await client.set_volume(serial, channel, volume)` | `None` | Set channel volume (0–255). |
+| `await client.set_volume_pct(serial, channel, pct)` | `None` | Set channel volume as percentage (0–100). |
 | `await client.set_fader_mute_state(serial, fader, state)` | `None` | Mute/unmute a fader. |
 | `await client.set_fx_enabled(serial, enabled)` | `None` | Enable or disable effects. |
+| `client.get_mixer(serial)` | `MixerStatus \| None` | Cached mixer state — no network call. |
+| `client.serials` | `list[str]` | Serial numbers of all connected mixers (from cache). |
 | `client.state` | `DaemonState` | Access the live internal state cache. |
 
 ---
@@ -178,6 +184,9 @@ from goxlrutil_api.protocol.types import ChannelName
 await client.set_volume(serial, ChannelName.Mic, 200)       # 0–255
 await client.set_volume(serial, ChannelName.Game, 128)
 await client.set_volume(serial, ChannelName.Headphones, 255)
+
+# Percentage variant – maps 0–100 % to 0–255, clamped and rounded
+await client.set_volume_pct(serial, ChannelName.Mic, 75.0)  # ≈ 191/255
 ```
 
 ### Fader Mute
@@ -339,6 +348,58 @@ async with GoXLRClient(transport, on_state_update=on_update) as client:
 
 > `on_state_update` is called after **every** patch, including minor changes. Debounce or
 > filter inside the callback if needed.
+
+---
+
+## Reconnection & Connection Events
+
+`WebSocketTransport` reconnects automatically when the daemon restarts or the
+connection drops. Reconnection is enabled by default and uses exponential backoff.
+
+```python
+transport = WebSocketTransport(
+    reconnect=True,           # default – disable with False
+    reconnect_delay=1.0,      # initial wait in seconds
+    max_reconnect_delay=60.0, # upper bound on wait
+)
+```
+
+### Reacting to connect / disconnect
+
+Supply `on_connect` and `on_disconnect` callbacks to `GoXLRClient` to be
+notified when the connection state changes. On reconnect the client
+automatically re-fetches the full daemon status so the state cache is
+immediately up to date before `on_connect` is called.
+
+```python
+async def on_connect() -> None:
+    print("Connected – mixer is available")
+
+async def on_disconnect() -> None:
+    print("Disconnected – mixer is unavailable")
+
+async with GoXLRClient(
+    transport,
+    on_connect=on_connect,
+    on_disconnect=on_disconnect,
+) as client:
+    await client.get_status()
+    await asyncio.sleep(3600)
+```
+
+### Reading cached state without a network call
+
+`get_mixer(serial)` returns the cached `MixerStatus` synchronously. Use this
+in callbacks and tight loops where you already have fresh state and do not want
+an extra round-trip:
+
+```python
+async def on_update(status: DaemonStatus) -> None:
+    mixer = client.get_mixer(serial)   # zero-latency, no network call
+    if mixer:
+        vol = mixer.levels.volumes.get("Mic", 0)
+        print(f"Mic: {vol}/255")
+```
 
 ---
 
@@ -786,11 +847,14 @@ await client.set_monitor_with_fx(serial, True)
 await client.set_monitor_mix(serial, OutputDevice.BroadcastMix)
 
 # VOD (streamer-safe) mode — silences music for stream while keeping it in headphones
-# VodMode: NormalMode, AnnouncerMode
-await client.set_vod_mode(serial, VodMode.AnnouncerMode)
+# VodMode: Routable, StreamNoMusic
+await client.set_vod_mode(serial, VodMode.StreamNoMusic)
 
-# Set the volume used to duck audio when the bleep/swear button is pressed (-36–36)
+# Set the volume used to duck audio when the bleep/swear button is pressed (-34–0 dB)
 await client.set_swear_button_volume(serial, -20)
+
+# Percentage variant: 0 % = -34 dB (full duck), 100 % = 0 dB (no ducking)
+await client.set_swear_button_volume_pct(serial, 50.0)  # -17 dB
 ```
 
 ### Submix

@@ -10,6 +10,8 @@ from goxlrutil_api.protocol.commands import DaemonRequest
 from goxlrutil_api.protocol.responses import DaemonResponse
 
 PatchCallback = Callable[[list[Any]], Coroutine[Any, Any, None]]
+ConnectCallback = Callable[[], Coroutine[Any, Any, None]]
+DisconnectCallback = Callable[[], Coroutine[Any, Any, None]]
 
 
 class Transport(ABC):
@@ -33,6 +35,22 @@ class Transport(ABC):
 
         The default implementation does nothing; override in transports that
         support push notifications (WebSocket).
+        """
+
+    async def subscribe_connect(self, callback: ConnectCallback) -> None:  # noqa: B027
+        """
+        Subscribe to connection-established events (including re-connects).
+
+        The default implementation does nothing; override in transports that
+        support reconnection (WebSocket).
+        """
+
+    async def subscribe_disconnect(self, callback: DisconnectCallback) -> None:  # noqa: B027
+        """
+        Subscribe to connection-lost events.
+
+        The default implementation does nothing; override in transports that
+        support reconnection (WebSocket).
         """
 
     async def __aenter__(self) -> Transport:

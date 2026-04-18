@@ -11,7 +11,7 @@ from goxlrutil_api.colour import Colour, ColourLike, as_hex
 from goxlrutil_api.events import ButtonEvent, ButtonEventType
 from goxlrutil_api.exceptions import CommandError
 from goxlrutil_api.protocol.commands import DaemonRequest, GoXLRCommand
-from goxlrutil_api.protocol.responses import DaemonResponse, DaemonStatus
+from goxlrutil_api.protocol.responses import DaemonResponse, DaemonStatus, MixerStatus
 from goxlrutil_api.protocol.types import (
     AnimationMode,
     Button,
@@ -45,6 +45,8 @@ _log = logging.getLogger(__name__)
 
 PatchListener = Callable[[DaemonStatus], Awaitable[None]]
 ButtonListener = Callable[[ButtonEvent], Awaitable[None]]
+ConnectListener = Callable[[], Awaitable[None]]
+DisconnectListener = Callable[[], Awaitable[None]]
 
 
 class GoXLRClient:
@@ -73,6 +75,24 @@ class GoXLRClient:
 
         async with GoXLRClient(transport, on_button_event=on_button) as client:
             ...
+
+    To react to connection loss and reconnection (useful for Home Assistant and similar)::
+
+        async def on_connect() -> None:
+            print("GoXLR daemon connected")
+
+        async def on_disconnect() -> None:
+            print("GoXLR daemon disconnected – marking entities unavailable")
+
+        async with GoXLRClient(
+            transport,
+            on_connect=on_connect,
+            on_disconnect=on_disconnect,
+        ) as client:
+            ...
+
+    When the transport reconnects the client will automatically re-fetch the full
+    daemon status so the internal state cache is immediately up to date.
     """
 
     def __init__(
@@ -80,12 +100,16 @@ class GoXLRClient:
         transport: Transport,
         on_state_update: PatchListener | None = None,
         on_button_event: ButtonListener | None = None,
+        on_connect: ConnectListener | None = None,
+        on_disconnect: DisconnectListener | None = None,
         long_press_threshold: float = 0.5,
     ) -> None:
         self._transport = transport
         self._state = DaemonState()
         self._on_state_update = on_state_update
         self._on_button_event_cb = on_button_event
+        self._on_connect_cb = on_connect
+        self._on_disconnect_cb = on_disconnect
         self._long_press_threshold = long_press_threshold
         # {serial: {button_name: monotonic press time}}
         self._button_press_times: dict[str, dict[str, float]] = {}
@@ -99,6 +123,8 @@ class GoXLRClient:
     async def __aenter__(self) -> GoXLRClient:
         await self._transport.connect()
         await self._transport.subscribe(self._on_patch)
+        await self._transport.subscribe_connect(self._on_reconnected)
+        await self._transport.subscribe_disconnect(self._on_disconnected)
         return self
 
     async def __aexit__(self, *_: object) -> None:
@@ -144,8 +170,25 @@ class GoXLRClient:
         """
         return list(self._state.status.mixers.keys())
 
+    def get_mixer(self, serial: str) -> MixerStatus | None:
+        """Return the cached ``MixerStatus`` for *serial*, or ``None`` if not found.
+
+        This is a synchronous, zero-latency read from the in-memory state cache.
+        It is the recommended way for Home Assistant (and similar) to access
+        individual mixer state without issuing a network request on every poll.
+        """
+        return self._state.status.mixers.get(serial)
+
     async def set_volume(self, serial: str, channel: ChannelName, volume: int) -> None:
         """Set channel volume (0–255)."""
+        await self.command(serial, GoXLRCommand.set_volume(channel, volume))
+
+    async def set_volume_pct(self, serial: str, channel: ChannelName, percent: float) -> None:
+        """Set channel volume as a percentage (0–100 → 0–255).
+
+        Values outside 0–100 are clamped silently.
+        """
+        volume = round(max(0.0, min(100.0, percent)) / 100 * 255)
         await self.command(serial, GoXLRCommand.set_volume(channel, volume))
 
     async def set_fader_mute_state(self, serial: str, fader: FaderName, state: MuteState) -> None:
@@ -374,7 +417,8 @@ class GoXLRClient:
 
         Values are rounded to the nearest integer and clamped silently.
         """
-        await self.command(serial, GoXLRCommand.set_swear_button_volume(max(-34, min(0, round(volume)))))
+        clamped = max(-34, min(0, round(volume)))
+        await self.command(serial, GoXLRCommand.set_swear_button_volume(clamped))
 
     async def set_swear_button_volume_pct(self, serial: str, percent: float) -> None:
         """Set the duck volume used by the bleep/swear button as a percentage (0–100).
@@ -564,6 +608,31 @@ class GoXLRClient:
         if resp.error is not None:
             raise CommandError(resp.error)
         return resp
+
+    async def _on_reconnected(self) -> None:
+        """Called by the transport after a successful reconnect.
+
+        Re-fetches the full daemon status so the state cache is immediately
+        up to date, then fires the user-supplied on_connect callback.
+        """
+        try:
+            await self.get_status()
+        except Exception as exc:
+            _log.warning("Failed to refresh status after reconnect: %s", exc)
+
+        if self._on_connect_cb is not None:
+            try:
+                await self._on_connect_cb()
+            except Exception as exc:
+                _log.warning("on_connect callback raised: %s", exc)
+
+    async def _on_disconnected(self) -> None:
+        """Called by the transport when the connection is lost."""
+        if self._on_disconnect_cb is not None:
+            try:
+                await self._on_disconnect_cb()
+            except Exception as exc:
+                _log.warning("on_disconnect callback raised: %s", exc)
 
     async def _on_patch(self, ops: list[Any]) -> None:
         """Called by the transport when a live Patch event arrives."""
